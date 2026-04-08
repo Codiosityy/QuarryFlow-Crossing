@@ -3,7 +3,6 @@
 **Adaptive Traffic Release Strategies for Railway Level Crossings**
 A simulation and ML-driven framework to model vehicle queues at railway crossings and evaluate intelligent gate release policies.
 
----
 
 # ✨ Overview
 
@@ -22,7 +21,6 @@ The system models:
 * Waiting time penalties
 * Crossing clearance efficiency
 
----
 
 # 🧠 System Architecture
 
@@ -56,7 +54,6 @@ flowchart TB
     K --> L[Streamlit Dashboard]
 ```
 
----
 
 ## 🚦 Railway Crossing Simulation Flow
 
@@ -86,7 +83,6 @@ flowchart LR
     ClearQueues --> End
 ```
 
----
 
 ## 🤖 Adaptive ML Policy Selection
 
@@ -125,7 +121,6 @@ flowchart TB
     P3 --> Output
 ```
 
----
 
 ## 📊 Policy Comparison Pipeline
 
@@ -177,8 +172,6 @@ QuarryFlow-Crossing
 └── README.md
 ```
 
----
-
 ## ⚙️ Installation
 
 ```bash
@@ -187,15 +180,11 @@ cd QuarryFlow-Crossing
 pip install -r requirements.txt
 ```
 
----
-
 ## ▶️ Run Simulation
 
 ```bash
 python scripts/compare_policies.py
 ```
-
----
 
 ## 🤖 Train ML Policy Model
 
@@ -203,15 +192,11 @@ python scripts/compare_policies.py
 python scripts/train_model.py
 ```
 
----
-
 ## 📊 Launch Dashboard
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
-
----
 
 ## 📈 Metrics Evaluated
 
@@ -222,7 +207,6 @@ streamlit run app/streamlit_app.py
 * Fairness index
 * Starvation probability
 
----
 
 ## 🧪 Policies Implemented
 
@@ -235,7 +219,6 @@ streamlit run app/streamlit_app.py
 **Adaptive Traffic Release Strategies for Railway Level Crossings**  
 A simulation and ML-driven framework to model vehicle queues at railway crossings and evaluate intelligent gate release policies.
 
----
 
 # ✨ Overview
 
@@ -255,7 +238,6 @@ The system models:
 - Crossing clearance efficiency  
 - Policy fairness and starvation prevention  
 
----
 
 ## 🎯 Use Cases
 
@@ -265,7 +247,6 @@ The system models:
 * Reinforcement learning experiments
 * Transport policy evaluation
 
----
 
 ## 🧠 Future Work
 
@@ -275,7 +256,6 @@ The system models:
 * Live traffic API support
 * GPU simulation engine
 
----
 
 ### 📜 License
 
