@@ -26,6 +26,10 @@ The system models:
 
 # 🧠 System Architecture
 
+This diagram shows the **end-to-end pipeline** of the QuarryFlow simulation.  
+Traffic is generated, queues accumulate while the barrier is closed, and once the gate opens, a **policy engine** selects the optimal vehicle release strategy. Metrics are collected and visualized in the dashboard.
+
+
 ```mermaid
 flowchart TB
     A[Scenario Config] --> B[Traffic Generator]
@@ -56,6 +60,10 @@ flowchart TB
 
 ## 🚦 Railway Crossing Simulation Flow
 
+This diagram illustrates the real-world crossing behaviour.
+When a train approaches, the gate closes and vehicles accumulate on both sides.
+After the train passes, a release policy determines how queues are cleared.
+
 ```mermaid
 flowchart LR
     Start --> TrainIncoming
@@ -81,6 +89,16 @@ flowchart LR
 ---
 
 ## 🤖 Adaptive ML Policy Selection
+
+The adaptive system converts traffic conditions into a feature vector and uses a RandomForest model to dynamically choose the best release policy.
+
+The model considers:
+
+- Queue imbalance
+- Vehicle composition
+- Driver aggressiveness
+- Waiting time
+- Traffic pressure
 
 ```mermaid
 flowchart TB
@@ -109,33 +127,17 @@ flowchart TB
 
 ---
 
-## 🔁 Core Simulation Loop
-
-```mermaid
-flowchart TB
-    Start --> Init
-    Init --> SpawnVehicles
-    SpawnVehicles --> UpdateQueues
-    UpdateQueues --> CheckBarrier
-
-    CheckBarrier -->|Closed| Accumulate
-    CheckBarrier -->|Open| ApplyPolicy
-
-    Accumulate --> TimeStep
-    ApplyPolicy --> ReleaseVehicles
-
-    ReleaseVehicles --> UpdateMetrics
-    UpdateMetrics --> TimeStep
-
-    TimeStep --> Continue{More Time?}
-    Continue -->|Yes| SpawnVehicles
-    Continue -->|No| End
-```
-
----
-
 ## 📊 Policy Comparison Pipeline
 
+This pipeline evaluates multiple release strategies under identical scenarios and compares their performance metrics.
+
+The framework runs:
+
+- Free Flow policy
+- Alternating policy
+- Adaptive ML policy
+
+Then compares them using wait time, fairness, throughput, and clearance speed.
 ```mermaid
 flowchart LR
     Scenario --> RunFreeFlow
@@ -150,60 +152,6 @@ flowchart LR
     Compare --> Charts
     Charts --> Dashboard
 ```
-
----
-
-## 🎛️ Streamlit Dashboard Architecture
-
-```mermaid
-flowchart TB
-    User --> UI[Streamlit UI]
-
-    UI --> LoadScenario
-    UI --> SelectPolicy
-    UI --> RunSimulation
-
-    RunSimulation --> Engine
-    Engine --> Results
-
-    Results --> Charts
-    Results --> Tables
-    Results --> KPIs
-
-    Charts --> UI
-    Tables --> UI
-    KPIs --> UI
-```
-
----
-
-## 🧩 Vehicle Release Strategy Logic
-
-```mermaid
-flowchart TB
-    GateOpen --> CheckPolicy
-
-    CheckPolicy --> FreeFlow
-    CheckPolicy --> Alternating
-    CheckPolicy --> Adaptive
-
-    FreeFlow --> ReleaseAll
-
-    Alternating --> LeftSide
-    Alternating --> RightSide
-
-    Adaptive --> EvaluateQueues
-    EvaluateQueues --> BurstLeft
-    EvaluateQueues --> BurstRight
-
-    ReleaseAll --> Exit
-    LeftSide --> Exit
-    RightSide --> Exit
-    BurstLeft --> Exit
-    BurstRight --> Exit
-```
-
----
 
 ## 📁 Project Structure
 
@@ -282,8 +230,30 @@ streamlit run app/streamlit_app.py
 | -------------- | --------------------------------- |
 | Free Flow      | All vehicles released immediately |
 | Alternating    | Left-right switching              |
-| Adaptive Burst | Larger queue priority             |
-| ML Adaptive    | RandomForest decision             |
+| Adaptive Burst | Larger queue priority             |# 🚦 QuarryFlow-Crossing
+
+**Adaptive Traffic Release Strategies for Railway Level Crossings**  
+A simulation and ML-driven framework to model vehicle queues at railway crossings and evaluate intelligent gate release policies.
+
+---
+
+# ✨ Overview
+
+QuarryFlow-Crossing simulates **two-sided traffic queues** at railway level crossings and evaluates multiple **vehicle release strategies**:
+
+- Free Flow Release  
+- Alternating Release  
+- Adaptive Burst Release  
+- ML-based Policy Selection (RandomForest)
+
+The system models:
+
+- Mixed vehicle types  
+- Queue accumulation  
+- Aggressive drivers  
+- Waiting time penalties  
+- Crossing clearance efficiency  
+- Policy fairness and starvation prevention  
 
 ---
 
