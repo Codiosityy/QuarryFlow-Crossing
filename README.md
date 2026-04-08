@@ -3,6 +3,7 @@
 **Adaptive Traffic Release Strategies for Railway Level Crossings**
 A simulation and ML-driven framework to model vehicle queues at railway crossings and evaluate intelligent gate release policies.
 
+** PPT Link: https://docs.google.com/presentation/d/1bjiNACeunBeg3E3gGEhl7RxeQ6ssqoSKdKAGcxi-njU/edit?usp=sharing **
 
 # ✨ Overview
 
