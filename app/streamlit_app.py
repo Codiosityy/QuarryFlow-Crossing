@@ -65,17 +65,6 @@ def metric_card(label: str, value: str, delta: str, subtext: str) -> str:
     """
 
 
-def judge_card(title: str, body: str, bullets: list[str]) -> str:
-    items = "".join(f"<li>{item}</li>" for item in bullets)
-    return f"""
-    <div class="judge-card">
-      <div class="judge-title">{title}</div>
-      <div class="judge-text">{body}</div>
-      <ul class="judge-list">{items}</ul>
-    </div>
-    """
-
-
 def add_closure_bands(fig: go.Figure, closures: list[tuple[float, float]]) -> go.Figure:
     for start, end in closures:
         fig.add_vrect(
@@ -195,8 +184,6 @@ st.markdown(
       <div class="tag-row">
         <span class="tag-chip">Mixed Traffic Simulation</span>
         <span class="tag-chip">Adaptive Control</span>
-        <span class="tag-chip">Judge-Ready Demo</span>
-        <span class="tag-chip">Impact + Technical Depth</span>
       </div>
     </div>
     """,
@@ -223,15 +210,7 @@ with st.sidebar:
         "Legacy model path",
         value=str(ROOT / "artifacts" / "models" / "surrogate.pkl"),
     )
-    run_button = st.button("Run judge demo", type="primary", width="stretch")
-    st.markdown(
-        """
-        <div class="section-note">
-          Best pitch flow: start with <strong>peak</strong>, then switch to <strong>chaotic</strong> for the dramatic finish.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    run_button = st.button("Run Simulation", type="primary", width="stretch")
 
 if run_button or "quarryflow_results" not in st.session_state:
     load_run(scenario, int(seed), model_path, ensemble_path, controller_path)
@@ -260,7 +239,7 @@ with metric_cols[0]:
             "Delay Reduction",
             pct(summary["adaptive_delay_gain_pct"]),
             "vs free-flow reopening",
-            "Use this as the opening headline for the pitch.",
+            "",
         ),
         unsafe_allow_html=True,
     )
@@ -270,7 +249,7 @@ with metric_cols[1]:
             "Throughput Gain",
             pct(summary["adaptive_throughput_gain_pct"]),
             "more vehicles cleared",
-            "Proves the policy is improving flow, not just slowing everyone down.",
+            "",
         ),
         unsafe_allow_html=True,
     )
@@ -280,7 +259,7 @@ with metric_cols[2]:
             "Peak Congestion Cut",
             pct(summary["adaptive_congestion_gain_pct"]),
             "less spillback",
-            "Useful for showing why adjacent streets stay more functional.",
+            "",
         ),
         unsafe_allow_html=True,
     )
@@ -295,13 +274,13 @@ with metric_cols[3]:
         unsafe_allow_html=True,
     )
 
-tabs = st.tabs(["Judge Snapshot", "Traffic Story", "Crossing Replay", "Learning Under Constraints", "Technical Depth"])
+tabs = st.tabs(["Impact Summary", "Traffic Story", "Crossing Replay", "Learning Under Constraints", "Technical Details"])
 
 with tabs[0]:
     st.markdown(
         f"""
         <div class="section-note">
-          <strong>Judge-ready headline:</strong> {summary['impact_headline']}
+          <strong>Impact Summary:</strong> {summary['impact_headline']}
         </div>
         """,
         unsafe_allow_html=True,
@@ -342,54 +321,13 @@ with tabs[0]:
         style_figure(fig)
         st.plotly_chart(fig, width="stretch")
 
-    judge_cols = st.columns(3)
-    with judge_cols[0]:
-        st.markdown(
-            judge_card(
-                "Impact-Focused Judge",
-                "This project lands because the pain point is familiar, the scenario is concrete, and the improvement is visual within seconds.",
-                [
-                    "Real urban relevance",
-                    "Strong before-vs-after contrast",
-                    "Easy to summarize in one sentence",
-                ],
-            ),
-            unsafe_allow_html=True,
-        )
-    with judge_cols[1]:
-        st.markdown(
-            judge_card(
-                "Technical Judge",
-                summary["technical_headline"],
-                [
-                    "Microsimulation with heterogeneous traffic",
-                    "Short-horizon action scoring",
-                    "Baselines with measurable deltas",
-                ],
-            ),
-            unsafe_allow_html=True,
-        )
-    with judge_cols[2]:
-        st.markdown(
-            judge_card(
-                "Pitch Guidance",
-                "Say the train causes the pause, but disorderly reopening causes the lasting jam.",
-                [
-                    "Open with peak or chaotic",
-                    "Call out delay, throughput, and spillback together",
-                    "Frame deployment as coordination, not infrastructure redesign",
-                ],
-            ),
-            unsafe_allow_html=True,
-        )
-
 with tabs[1]:
     st.markdown(
         """
         <div class="story-card">
           <div class="story-title">Narrative Flow</div>
           <div class="story-copy">
-            Red bands show train closures. The key storytelling moment is after each red zone ends:
+            Red bands show train closures. The key moment is after each red zone ends:
             the barrier is open, but congestion persists unless release behavior is coordinated.
           </div>
         </div>
@@ -486,7 +424,7 @@ with tabs[2]:
                     "Barrier State",
                     "Closed" if snapshot.barrier_closed else "Open",
                     f"action: {snapshot.current_action}",
-                    "This is the easiest panel to talk through while replaying the scene.",
+                    "",
                 ),
                 unsafe_allow_html=True,
             )
@@ -631,17 +569,6 @@ with tabs[4]:
         st.subheader("Assumptions & Data Source")
         st.markdown(build_assumptions_markdown())
 
-        st.subheader("Judge Talking Points")
-        for hook in summary["judge_hooks"]:
-            st.markdown(
-                f"""
-                <div class="story-card">
-                  <div class="story-copy">{hook}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
     with depth_right:
         st.subheader("Comparison Table")
         st.dataframe(comparison, width="stretch", hide_index=True)
@@ -650,11 +577,11 @@ with tabs[4]:
 
     report_col, assumptions_col = st.columns([1.0, 1.0])
     with report_col:
-        st.subheader("Download Pitch Brief")
+        st.subheader("Download Report")
         st.download_button(
-            "Download markdown pitch brief",
+            "Download markdown report",
             data=pitch_markdown,
-            file_name=f"quarryflow_{scenario}_pitch_brief.md",
+            file_name=f"quarryflow_{scenario}_report.md",
             mime="text/markdown",
             width="stretch",
         )
@@ -675,6 +602,6 @@ C --> D["Surrogate Ensemble"]
 D --> E["LinUCB Residual + Safety Shield"]
 E --> B
 B --> F["Metrics: Delay, Throughput, Congestion, Risk"]
-F --> G["Judge-Facing Dashboard"]""",
+F --> G["User Dashboard"]""",
         language="mermaid",
     )
