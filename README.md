@@ -6,9 +6,7 @@ typical of emerging-market environments (mixed cars, bikes, and auto-rickshaws).
 
 ## Documentation
 
-📚 **[Full Documentation Wiki](https://github.com/Codiosityy/QuarryFlow-Crossing/wiki)** — Complete documentation with navigation
-
-The wiki contains comprehensive documentation including:
+📚 **[Full Documentation Wiki](https://github.com/Codiosityy/QuarryFlow-Crossing/wiki)** —
 
 - [Project Overview](https://github.com/Codiosityy/QuarryFlow-Crossing/wiki/00-project-overview) — Architecture, subsystems, and design decisions
 - [Core Simulation Engine](https://github.com/Codiosityy/QuarryFlow-Crossing/wiki/01-simulation-engine) — Simulator lifecycle, vehicle models, scenarios
