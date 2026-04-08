@@ -1,0 +1,166 @@
+:root {
+  --bg-main: #08110f;
+  --bg-panel: rgba(10, 24, 21, 0.88);
+  --bg-panel-strong: rgba(14, 32, 28, 0.94);
+  --line-soft: rgba(80, 255, 173, 0.18);
+  --line-strong: rgba(80, 255, 173, 0.4);
+  --text-main: #dbf8ea;
+  --text-soft: #8fd4b5;
+  --accent-green: #55f0a6;
+  --accent-amber: #ffbf4d;
+  --accent-red: #ff6a6a;
+}
+
+.stApp {
+  background:
+    radial-gradient(circle at top left, rgba(38, 103, 77, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 191, 77, 0.12), transparent 24%),
+    linear-gradient(180deg, #07110f 0%, #0d1614 100%);
+  color: var(--text-main);
+}
+
+.block-container {
+  padding-top: 1.6rem;
+  padding-bottom: 2.4rem;
+}
+
+.hero-shell {
+  border: 1px solid var(--line-strong);
+  background: linear-gradient(135deg, rgba(10, 24, 21, 0.98), rgba(17, 35, 29, 0.92));
+  padding: 1.25rem 1.5rem;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  margin-bottom: 1rem;
+}
+
+.eyebrow {
+  color: var(--accent-green);
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+  margin-bottom: 0.7rem;
+}
+
+.hero-title {
+  color: var(--text-main);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.05;
+  margin-bottom: 0.8rem;
+}
+
+.hero-copy {
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0.95rem;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-chip {
+  border: 1px solid var(--line-soft);
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--accent-green);
+  font-size: 0.82rem;
+}
+
+.metric-panel {
+  border: 1px solid var(--line-soft);
+  background: var(--bg-panel);
+  border-radius: 16px;
+  padding: 1rem 1rem 0.85rem;
+  margin-bottom: 0.9rem;
+  min-height: 134px;
+}
+
+.metric-label {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.35rem;
+}
+
+.metric-value {
+  color: var(--text-main);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.metric-delta {
+  color: var(--accent-green);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.metric-subtext {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.judge-card {
+  border: 1px solid var(--line-soft);
+  background: var(--bg-panel-strong);
+  border-radius: 16px;
+  padding: 1rem 1.05rem;
+  min-height: 220px;
+}
+
+.judge-title {
+  color: var(--accent-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.8rem;
+  margin-bottom: 0.55rem;
+}
+
+.judge-text {
+  color: var(--text-main);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  margin-bottom: 0.7rem;
+}
+
+.judge-list {
+  color: var(--text-soft);
+  font-size: 0.91rem;
+  line-height: 1.55;
+}
+
+.section-note {
+  border-left: 3px solid var(--accent-amber);
+  padding-left: 0.85rem;
+  color: var(--text-soft);
+  margin: 0.6rem 0 1rem;
+}
+
+.story-card {
+  border: 1px solid var(--line-soft);
+  background: var(--bg-panel);
+  border-radius: 14px;
+  padding: 0.95rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.story-title {
+  color: var(--accent-green);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.35rem;
+}
+
+.story-copy {
+  color: var(--text-soft);
+  line-height: 1.5;
+  font-size: 0.93rem;
+}
