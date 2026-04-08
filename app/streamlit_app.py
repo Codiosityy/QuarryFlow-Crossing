@@ -136,18 +136,32 @@ def build_snapshot_figure(vehicles: pd.DataFrame, scenario_name: str, seed: int,
     return style_figure(fig)
 
 
-def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, controller_path: str) -> None:
+@st.cache_data(show_spinner=False, ttl=3600)
+def _run_cached_suite(scenario: str, seed: int, model_path: str | None, ensemble_path: str | None, controller_path: str | None, record_history: bool):
+    """Cached wrapper — returns a plain dict so Streamlit can hash it."""
+    return run_policy_suite(
+        scenario,
+        seed=seed,
+        model_path=model_path,
+        ensemble_path=ensemble_path,
+        controller_path=controller_path,
+        record_history=record_history,
+    )
+
+
+def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, controller_path: str, *, record_history: bool = True) -> None:
     model_path_arg = model_path if model_path and Path(model_path).exists() else None
     ensemble_path_arg = ensemble_path if ensemble_path and Path(ensemble_path).exists() else None
     controller_path_arg = controller_path if controller_path and Path(controller_path).exists() else None
-    results = run_policy_suite(
-        scenario,
-        seed=seed,
-        model_path=model_path_arg,
-        ensemble_path=ensemble_path_arg,
-        controller_path=controller_path_arg,
-        record_history=True,
-    )
+    with st.spinner("Running simulations — comparing policies…"):
+        results = _run_cached_suite(
+            scenario,
+            seed=seed,
+            model_path=model_path_arg,
+            ensemble_path=ensemble_path_arg,
+            controller_path=controller_path_arg,
+            record_history=record_history,
+        )
     st.session_state["quarryflow_results"] = results
     st.session_state["quarryflow_summary"] = judge_summary(results, scenario)
     st.session_state["quarryflow_scenario"] = scenario
@@ -212,8 +226,11 @@ with st.sidebar:
     )
     run_button = st.button("Run Simulation", type="primary", width="stretch")
 
-if run_button or "quarryflow_results" not in st.session_state:
-    load_run(scenario, int(seed), model_path, ensemble_path, controller_path)
+if run_button:
+    _run_cached_suite.clear()
+    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True)
+elif "quarryflow_results" not in st.session_state:
+    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=False)
 
 results = st.session_state["quarryflow_results"]
 summary = st.session_state["quarryflow_summary"]
@@ -231,6 +248,59 @@ comparison = comparison_frame(results)
 improvements = improvement_frame(results)
 adaptive_result = results[primary_policy]
 adaptive_history = history_frame(adaptive_result)
+
+# ── About QuarryFlow Section (fills blank space on initial page) ──────
+st.markdown(
+    """
+    <div class="about-section">
+      <div class="about-heading">About This Project</div>
+      <div class="about-body">
+        When a train passes and the barrier lifts, traffic <strong>should</strong> resume instantly — but it doesn't.
+        Vehicles from both sides rush the single crossing box simultaneously, creating disorder, lateral squeeze,
+        and conflict freezes that keep the road jammed long after the train is gone.
+        <strong>QuarryFlow Crossing</strong> models this bottleneck with a behaviour-aware microsimulator and
+        evaluates intelligent staged-release strategies that cut delay and improve flow
+        — without changing any physical infrastructure.
+      </div>
+      <div class="highlight-row">
+        <div class="highlight-card">
+          <div class="highlight-card-value">6</div>
+          <div class="highlight-card-label">Driver Profiles</div>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-card-value">3</div>
+          <div class="highlight-card-label">Vehicle Types</div>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-card-value">7</div>
+          <div class="highlight-card-label">Scenario Presets</div>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-card-value">4</div>
+          <div class="highlight-card-label">Release Policies</div>
+        </div>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-item"><span class="feature-icon">⚙️</span> Event-driven microsimulation engine</div>
+        <div class="feature-item"><span class="feature-icon">🧠</span> ML surrogate + LinUCB bandit</div>
+        <div class="feature-item"><span class="feature-icon">🛡️</span> Safety shield vetoes risky actions</div>
+        <div class="feature-item"><span class="feature-icon">📊</span> Counterfactual policy comparison</div>
+        <div class="feature-item"><span class="feature-icon">🚗</span> Car, bike &amp; auto-rickshaw mix</div>
+        <div class="feature-item"><span class="feature-icon">🔄</span> Curriculum-trained adaptive controller</div>
+      </div>
+      <div class="tech-tags">
+        <span class="tech-tag">Python</span>
+        <span class="tech-tag">Streamlit</span>
+        <span class="tech-tag">Plotly</span>
+        <span class="tech-tag">scikit-learn</span>
+        <span class="tech-tag">NumPy</span>
+        <span class="tech-tag">Pandas</span>
+        <span class="tech-tag">Self-Generated Data</span>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 metric_cols = st.columns(4)
 with metric_cols[0]:
@@ -348,18 +418,21 @@ with tabs[1]:
         )
         melted["policy"] = policy_name
         queue_frames.append(melted)
-    queue_frame = pd.concat(queue_frames, ignore_index=True)
-    queue_fig = px.line(
-        queue_frame,
-        x="time",
-        y="queue_length",
-        color="policy",
-        line_dash="queue_side",
-        title="Queue Evolution by Policy and Side",
-    )
-    add_closure_bands(queue_fig, config.train_closures)
-    style_figure(queue_fig)
-    st.plotly_chart(queue_fig, width="stretch")
+    if not queue_frames:
+        st.info("Click **Run Simulation** in the sidebar to enable the Traffic Story charts.")
+    else:
+        queue_frame = pd.concat(queue_frames, ignore_index=True)
+        queue_fig = px.line(
+            queue_frame,
+            x="time",
+            y="queue_length",
+            color="policy",
+            line_dash="queue_side",
+            title="Queue Evolution by Policy and Side",
+        )
+        add_closure_bands(queue_fig, config.train_closures)
+        style_figure(queue_fig)
+        st.plotly_chart(queue_fig, width="stretch")
 
     risk_frames = []
     for policy_name, result in results.items():
@@ -369,25 +442,28 @@ with tabs[1]:
         trimmed = history[["time", "disorder_index", "occupancy_risk"]].copy()
         trimmed["policy"] = policy_name
         risk_frames.append(trimmed)
-    risk_frame = pd.concat(risk_frames, ignore_index=True)
-    risk_long = risk_frame.melt(
-        id_vars=["time", "policy"],
-        value_vars=["disorder_index", "occupancy_risk"],
-        var_name="metric",
-        value_name="value",
-    )
-    risk_fig = px.line(
-        risk_long,
-        x="time",
-        y="value",
-        color="policy",
-        facet_row="metric",
-        title="Disorder and Risk Trajectory",
-    )
-    add_closure_bands(risk_fig, config.train_closures)
-    style_figure(risk_fig)
-    risk_fig.update_yaxes(matches=None)
-    st.plotly_chart(risk_fig, width="stretch")
+    if not risk_frames:
+        pass  # already shown info above
+    else:
+        risk_frame = pd.concat(risk_frames, ignore_index=True)
+        risk_long = risk_frame.melt(
+            id_vars=["time", "policy"],
+            value_vars=["disorder_index", "occupancy_risk"],
+            var_name="metric",
+            value_name="value",
+        )
+        risk_fig = px.line(
+            risk_long,
+            x="time",
+            y="value",
+            color="policy",
+            facet_row="metric",
+            title="Disorder and Risk Trajectory",
+        )
+        add_closure_bands(risk_fig, config.train_closures)
+        style_figure(risk_fig)
+        risk_fig.update_yaxes(matches=None)
+        st.plotly_chart(risk_fig, width="stretch")
 
 with tabs[2]:
     policy_options = list(results)
@@ -399,7 +475,7 @@ with tabs[2]:
     trace_history = decision_trace_frame(replay_result)
 
     if replay_history.empty:
-        st.warning("No replay history available for this run.")
+        st.info("Click **Run Simulation** in the sidebar to enable the Crossing Replay. The initial load skips history recording for speed.")
     else:
         replay_col, meta_col = st.columns([1.4, 0.9])
         with replay_col:

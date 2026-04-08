@@ -164,3 +164,106 @@
   line-height: 1.5;
   font-size: 0.93rem;
 }
+
+/* ── About / Summary Section ─────────────────────────────────── */
+
+.about-section {
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(145deg, rgba(10, 24, 21, 0.96), rgba(14, 32, 28, 0.88));
+  border-radius: 18px;
+  padding: 1.4rem 1.6rem 1.2rem;
+  margin-bottom: 1.15rem;
+  animation: fadeSlideUp 0.5s ease-out;
+}
+
+.about-heading {
+  color: var(--accent-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.76rem;
+  margin-bottom: 0.65rem;
+}
+
+.about-body {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  margin-bottom: 0.9rem;
+}
+
+.about-body strong {
+  color: var(--text-main);
+}
+
+.highlight-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.95rem;
+}
+
+.highlight-card {
+  flex: 1 1 140px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  min-width: 140px;
+}
+
+.highlight-card-value {
+  color: var(--accent-green);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.highlight-card-label {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.7rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.feature-icon {
+  color: var(--accent-green);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.tech-tag {
+  border: 1px solid rgba(255, 191, 77, 0.25);
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 191, 77, 0.06);
+  color: var(--accent-amber);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

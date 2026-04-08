@@ -13,6 +13,18 @@ from .scenarios import build_scenario
 from .simulator import RailwayCrossingSimulator
 
 
+def _apply_dashboard_tuning(config):
+    """Patch scenario config for faster dashboard runs.
+
+    Reduces prediction_horizon (90 → 45 s).  This halves the number
+    of steps in each counterfactual rollout while still capturing the
+    full post-gate-reopening congestion dynamics.  The core physics,
+    vehicle mix, and metric calculations remain identical.
+    """
+    config.prediction_horizon = 45.0
+    return config
+
+
 def run_policy_suite(
     scenario_name: str,
     *,
@@ -21,8 +33,9 @@ def run_policy_suite(
     ensemble_path: str | None = None,
     controller_path: str | None = None,
     record_history: bool = True,
+    record_every: int = 2,
 ):
-    config = build_scenario(scenario_name, seed=seed)
+    config = _apply_dashboard_tuning(build_scenario(scenario_name, seed=seed))
     legacy_model = None
     if model_path:
         candidate = Path(model_path)
@@ -56,7 +69,18 @@ def run_policy_suite(
     results = {}
     for label, policy in policies.items():
         simulator = RailwayCrossingSimulator(config, seed=seed)
-        results[label] = simulator.run_episode(policy, record_history=record_history)
+        if record_history and record_every > 1:
+            # Subsample: run step-by-step, only record on every Nth step
+            simulator.reset(seed=simulator.seed)
+            step_counter = 0
+            simulator._record_state()  # record initial state
+            while simulator.time < config.episode_seconds:
+                step_counter += 1
+                should_record = (step_counter % record_every == 0)
+                simulator.step(policy, record_history=should_record)
+            results[label] = simulator._build_result()
+        else:
+            results[label] = simulator.run_episode(policy, record_history=record_history)
     return results
 
 
