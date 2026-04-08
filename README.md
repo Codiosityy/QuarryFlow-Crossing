@@ -54,7 +54,7 @@ flowchart TB
 
 ---
 
-# 🚦 Railway Crossing Simulation Flow
+## 🚦 Railway Crossing Simulation Flow
 
 ```mermaid
 flowchart LR
@@ -80,7 +80,7 @@ flowchart LR
 
 ---
 
-# 🤖 Adaptive ML Policy Selection
+## 🤖 Adaptive ML Policy Selection
 
 ```mermaid
 flowchart TB
@@ -109,7 +109,7 @@ flowchart TB
 
 ---
 
-# 🔁 Core Simulation Loop
+## 🔁 Core Simulation Loop
 
 ```mermaid
 flowchart TB
@@ -134,7 +134,7 @@ flowchart TB
 
 ---
 
-# 📊 Policy Comparison Pipeline
+## 📊 Policy Comparison Pipeline
 
 ```mermaid
 flowchart LR
@@ -153,7 +153,7 @@ flowchart LR
 
 ---
 
-# 🎛️ Streamlit Dashboard Architecture
+## 🎛️ Streamlit Dashboard Architecture
 
 ```mermaid
 flowchart TB
@@ -177,7 +177,7 @@ flowchart TB
 
 ---
 
-# 🧩 Vehicle Release Strategy Logic
+## 🧩 Vehicle Release Strategy Logic
 
 ```mermaid
 flowchart TB
@@ -205,7 +205,7 @@ flowchart TB
 
 ---
 
-# 📁 Project Structure
+## 📁 Project Structure
 
 ```
 QuarryFlow-Crossing
@@ -231,7 +231,7 @@ QuarryFlow-Crossing
 
 ---
 
-# ⚙️ Installation
+## ⚙️ Installation
 
 ```bash
 git clone https://github.com/Codiosityy/QuarryFlow-Crossing
@@ -241,7 +241,7 @@ pip install -r requirements.txt
 
 ---
 
-# ▶️ Run Simulation
+## ▶️ Run Simulation
 
 ```bash
 python scripts/compare_policies.py
@@ -249,7 +249,7 @@ python scripts/compare_policies.py
 
 ---
 
-# 🤖 Train ML Policy Model
+## 🤖 Train ML Policy Model
 
 ```bash
 python scripts/train_model.py
@@ -257,7 +257,7 @@ python scripts/train_model.py
 
 ---
 
-# 📊 Launch Dashboard
+## 📊 Launch Dashboard
 
 ```bash
 streamlit run app/streamlit_app.py
@@ -265,7 +265,7 @@ streamlit run app/streamlit_app.py
 
 ---
 
-# 📈 Metrics Evaluated
+## 📈 Metrics Evaluated
 
 * Average wait time
 * Queue length
@@ -276,7 +276,7 @@ streamlit run app/streamlit_app.py
 
 ---
 
-# 🧪 Policies Implemented
+## 🧪 Policies Implemented
 
 | Policy         | Description                       |
 | -------------- | --------------------------------- |
@@ -287,7 +287,7 @@ streamlit run app/streamlit_app.py
 
 ---
 
-# 🎯 Use Cases
+## 🎯 Use Cases
 
 * Railway crossing optimization
 * Traffic signal research
@@ -297,7 +297,7 @@ streamlit run app/streamlit_app.py
 
 ---
 
-# 🧠 Future Work
+## 🧠 Future Work
 
 * Reinforcement learning policy
 * Multi-crossing simulation
@@ -307,16 +307,16 @@ streamlit run app/streamlit_app.py
 
 ---
 
-# 📜 License
+### 📜 License
 
 MIT License
 
 ---
 
-# 👨‍💻 Author
+### 👨‍💻 Author
 
 **Codiosityy**
-
+**thekeshavladdha**
 ---
 
-# ⭐ Star the repo if you find it useful
+### ⭐ Star the repo if you find it useful
