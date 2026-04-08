@@ -263,10 +263,9 @@ MIT License
 
 ---
 
-### 👨‍💻 Author
+## 👨‍💻 Author
 
 **Codiosityy**
 **thekeshavladdha**
----
 
 ### ⭐ Star the repo if you find it useful
