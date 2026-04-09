@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,13 +29,54 @@ from quarryflow.model import SurrogateModel  # noqa: E402
 from quarryflow.reporting import build_assumptions_markdown, build_pitch_markdown  # noqa: E402
 from quarryflow.scenarios import build_scenario  # noqa: E402
 
+# ═══════════════════════════════════════════════════════════════
+#  Plotly Theme
+# ═══════════════════════════════════════════════════════════════
+
+QUARRY_COLORS = [
+    "#55f0a6", "#ffbf4d", "#4dd4ff", "#b68fff",
+    "#ff6a6a", "#f0e655", "#ff8f6a", "#6af0e6",
+]
+
+PLOTLY_TEMPLATE = go.layout.Template(
+    layout=go.Layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#b8e6d0", size=12),
+        title=dict(font=dict(size=15, color="#eafff4")),
+        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11)),
+        margin=dict(l=24, r=24, t=52, b=24),
+        xaxis=dict(
+            showgrid=True,
+            gridcolor="rgba(85, 240, 166, 0.08)",
+            linecolor="rgba(85, 240, 166, 0.15)",
+            zerolinecolor="rgba(85, 240, 166, 0.1)",
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="rgba(85, 240, 166, 0.08)",
+            linecolor="rgba(85, 240, 166, 0.15)",
+            zerolinecolor="rgba(85, 240, 166, 0.1)",
+        ),
+        colorway=QUARRY_COLORS,
+    )
+)
+
+pio.templates["quarryflow"] = PLOTLY_TEMPLATE
+pio.templates.default = "quarryflow"
+
 
 st.set_page_config(
-    page_title="QuarryFlow Crossing",
+    page_title="QuarryFlow Crossing — Railway Bottleneck Optimizer",
+    page_icon="🚦",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
+
+# ═══════════════════════════════════════════════════════════════
+#  Helpers
+# ═══════════════════════════════════════════════════════════════
 
 def load_css() -> None:
     css_path = ROOT / "app" / "style.css"
@@ -41,7 +84,8 @@ def load_css() -> None:
 
 
 def pct(value: float) -> str:
-    return f"{value:.1f}%"
+    sign = "+" if value > 0 else ""
+    return f"{sign}{value:.1f}%"
 
 
 def num(value: float) -> str:
@@ -68,25 +112,12 @@ def metric_card(label: str, value: str, delta: str, subtext: str) -> str:
 def add_closure_bands(fig: go.Figure, closures: list[tuple[float, float]]) -> go.Figure:
     for start, end in closures:
         fig.add_vrect(
-            x0=start,
-            x1=end,
-            fillcolor="rgba(255, 106, 106, 0.12)",
-            line_width=0,
-            layer="below",
+            x0=start, x1=end,
+            fillcolor="rgba(255, 106, 106, 0.1)",
+            line_width=0, layer="below",
+            annotation_text="🚂", annotation_position="top left",
+            annotation_font_size=10,
         )
-    return fig
-
-
-def style_figure(fig: go.Figure) -> go.Figure:
-    fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font={"color": "#dbf8ea"},
-        legend={"bgcolor": "rgba(0,0,0,0)"},
-        margin={"l": 20, "r": 20, "t": 50, "b": 20},
-    )
-    fig.update_xaxes(showgrid=True, gridcolor="rgba(85, 240, 166, 0.12)")
-    fig.update_yaxes(showgrid=True, gridcolor="rgba(85, 240, 166, 0.12)")
     return fig
 
 
@@ -110,73 +141,69 @@ def build_snapshot_figure(vehicles: pd.DataFrame, scenario_name: str, seed: int,
     )
 
     fig = px.scatter(
-        vehicles,
-        x="x",
-        y="y",
-        color="vehicle_class",
-        symbol="side",
+        vehicles, x="x", y="y",
+        color="vehicle_class", symbol="side",
         hover_data=["vehicle_id", "speed", "progress"],
+        color_discrete_map={"car": "#55f0a6", "bike": "#4dd4ff", "auto": "#ffbf4d"},
     )
-    fig.update_traces(marker={"size": 11, "line": {"width": 1, "color": "#08110f"}})
+    fig.update_traces(marker=dict(size=12, line=dict(width=1.5, color="#060d0b"), opacity=0.9))
     fig.update_layout(
-        title=f"Crossing Replay at t={time_value:.1f}s",
+        title=f"⏱ t = {time_value:.1f}s",
         xaxis_title="Distance from crossing center (m)",
-        yaxis_title="Approach lanes / lateral spread",
-        height=500,
-        xaxis={"range": [-approach - 12, approach + config.recovery_length + 12]},
-        yaxis={"range": [-3.4, 3.4]},
+        yaxis_title="",
+        height=480,
+        xaxis=dict(range=[-approach - 12, approach + config.recovery_length + 12]),
+        yaxis=dict(range=[-3.4, 3.4], showticklabels=False),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
-    fig.add_hrect(y0=0.3, y1=2.6, fillcolor="rgba(85, 240, 166, 0.05)", line_width=0)
-    fig.add_hrect(y0=-2.6, y1=-0.3, fillcolor="rgba(85, 240, 166, 0.05)", line_width=0)
-    fig.add_vrect(x0=-half_box, x1=half_box, fillcolor="rgba(255, 191, 77, 0.12)", line_width=0)
-    fig.add_vline(x=0, line_color="rgba(255,191,77,0.65)", line_dash="dash")
-    fig.add_annotation(x=0, y=3.0, text="Rail Crossing Box", showarrow=False, font={"color": "#ffbf4d"})
-    fig.add_annotation(x=-approach + 14, y=2.9, text="Left Approach", showarrow=False, font={"color": "#55f0a6"})
-    fig.add_annotation(x=approach - 14, y=-2.9, text="Right Approach", showarrow=False, font={"color": "#55f0a6"})
-    return style_figure(fig)
+    # Approach lanes
+    fig.add_hrect(y0=0.3, y1=2.6, fillcolor="rgba(85, 240, 166, 0.04)", line_width=0)
+    fig.add_hrect(y0=-2.6, y1=-0.3, fillcolor="rgba(85, 240, 166, 0.04)", line_width=0)
+    # Crossing box
+    fig.add_vrect(x0=-half_box, x1=half_box, fillcolor="rgba(255, 191, 77, 0.08)", line_width=0)
+    fig.add_vline(x=0, line_color="rgba(255,191,77,0.5)", line_dash="dash")
+    fig.add_annotation(x=0, y=3.1, text="🚧 Crossing Box", showarrow=False, font=dict(color="#ffbf4d", size=11))
+    fig.add_annotation(x=-approach + 18, y=2.9, text="← Left", showarrow=False, font=dict(color="#55f0a6", size=10))
+    fig.add_annotation(x=approach - 18, y=-2.9, text="Right →", showarrow=False, font=dict(color="#55f0a6", size=10))
+    return fig
 
+
+# ═══════════════════════════════════════════════════════════════
+#  Simulation Runner
+# ═══════════════════════════════════════════════════════════════
 
 @st.cache_data(show_spinner=False, ttl=3600)
-def _run_cached_suite(scenario: str, seed: int, model_path: str | None, ensemble_path: str | None, controller_path: str | None, record_history: bool, fast_mode: bool):
-    """Cached wrapper — returns a plain dict so Streamlit can hash it."""
+def _run_cached_suite(scenario, seed, model_path, ensemble_path, controller_path, record_history, fast_mode):
     return run_policy_suite(
-        scenario,
-        seed=seed,
-        model_path=model_path,
-        ensemble_path=ensemble_path,
+        scenario, seed=seed,
+        model_path=model_path, ensemble_path=ensemble_path,
         controller_path=controller_path,
-        record_history=record_history,
-        fast_mode=fast_mode,
+        record_history=record_history, fast_mode=fast_mode,
     )
 
 
-def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, controller_path: str, *, record_history: bool = True, fast_mode: bool = False) -> None:
+def load_run(scenario, seed, model_path, ensemble_path, controller_path, *, record_history=True, fast_mode=False):
     model_path_arg = model_path if model_path and Path(model_path).exists() else None
     ensemble_path_arg = ensemble_path if ensemble_path and Path(ensemble_path).exists() else None
     controller_path_arg = controller_path if controller_path and Path(controller_path).exists() else None
 
     if fast_mode:
-        with st.spinner("⚡ Quick loading preview..."):
+        with st.spinner("⚡ Loading preview..."):
             results = _run_cached_suite(
-                scenario,
-                seed=seed,
-                model_path=model_path_arg,
-                ensemble_path=ensemble_path_arg,
+                scenario, seed=seed,
+                model_path=model_path_arg, ensemble_path=ensemble_path_arg,
                 controller_path=controller_path_arg,
-                record_history=record_history,
-                fast_mode=True,
+                record_history=record_history, fast_mode=True,
             )
     else:
-        progress_bar = st.progress(0, text="Preparing full simulation...")
+        progress_bar = st.progress(0, text="🔬 Running full ML simulation...")
         results = run_policy_suite(
-            scenario,
-            seed=seed,
-            model_path=model_path_arg,
-            ensemble_path=ensemble_path_arg,
+            scenario, seed=seed,
+            model_path=model_path_arg, ensemble_path=ensemble_path_arg,
             controller_path=controller_path_arg,
-            record_history=record_history,
-            fast_mode=False,
-            progress_callback=lambda pct_val, msg: progress_bar.progress(min(pct_val, 1.0), text=msg),
+            record_history=record_history, fast_mode=False,
+            progress_callback=lambda p, m: progress_bar.progress(min(p, 1.0), text=f"🔬 {m}"),
         )
         progress_bar.empty()
 
@@ -184,18 +211,14 @@ def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, cont
     st.session_state["quarryflow_summary"] = judge_summary(results, scenario)
     st.session_state["quarryflow_scenario"] = scenario
     st.session_state["quarryflow_seed"] = seed
-    st.session_state["quarryflow_model_path"] = model_path_arg
-    st.session_state["quarryflow_ensemble_path"] = ensemble_path_arg
-    st.session_state["quarryflow_controller_path"] = controller_path_arg
     st.session_state["quarryflow_fast_mode"] = fast_mode
     if not fast_mode and ensemble_path_arg:
-        from quarryflow.model import BootstrapSurrogateEnsemble  # noqa: E402
-
+        from quarryflow.model import BootstrapSurrogateEnsemble
         st.session_state["quarryflow_model_label"] = BootstrapSurrogateEnsemble.load(ensemble_path_arg).backend
     elif not fast_mode and model_path_arg:
         st.session_state["quarryflow_model_label"] = SurrogateModel.load(model_path_arg).backend
     else:
-        st.session_state["quarryflow_model_label"] = "heuristic-only adaptive control"
+        st.session_state["quarryflow_model_label"] = "heuristic-only adaptive"
     if not fast_mode and controller_path_arg:
         _, _, metadata = load_hybrid_controller(controller_path_arg)
         st.session_state["quarryflow_controller_metadata"] = metadata
@@ -203,51 +226,54 @@ def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, cont
         st.session_state["quarryflow_controller_metadata"] = {}
 
 
+# ═══════════════════════════════════════════════════════════════
+#  Page Layout
+# ═══════════════════════════════════════════════════════════════
+
 load_css()
 
-st.markdown(
-    """
-    <div class="hero-shell">
-      <div class="eyebrow">KnowledgeQuarry ML Track</div>
-      <div class="hero-title">QuarryFlow Crossing</div>
-      <div class="hero-copy">
-        A behavior-aware railway-crossing surge optimizer that shows why traffic stays jammed after the train is gone,
-        then demonstrates how adaptive staged release cuts delay and improves flow without changing infrastructure.
-      </div>
-      <div class="tag-row">
-        <span class="tag-chip">Mixed Traffic Simulation</span>
-        <span class="tag-chip">Adaptive Control</span>
-        <span class="tag-chip">ML Surrogate + LinUCB</span>
-        <span class="tag-chip">Safety Shield</span>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# ── Hero ──────────────────────────────────────────────────────
+st.markdown("""
+<div class="hero-shell">
+  <div class="eyebrow">CONVOKE 8.0 · Data Science Challenge</div>
+  <div class="hero-title">QuarryFlow Crossing</div>
+  <div class="hero-copy">
+    A behaviour-aware railway-crossing surge optimizer that reveals why traffic stays gridlocked
+    after the barrier lifts — then demonstrates how adaptive staged release cuts delay,
+    improves throughput, and reduces conflict without changing infrastructure.
+  </div>
+  <div class="tag-row">
+    <span class="tag-chip">🧪 Microsimulation</span>
+    <span class="tag-chip">🧠 ML Surrogate</span>
+    <span class="tag-chip">🎰 LinUCB Bandit</span>
+    <span class="tag-chip">🛡️ Safety Shield</span>
+    <span class="tag-chip">📊 Counterfactual</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
+# ── Sidebar ───────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### Run Setup")
+    st.markdown("### ⚙️ Simulation Config")
     scenario = st.selectbox(
-        "Scenario preset",
-        ["light", "peak", "chaotic", "peak_left_skew", "peak_right_skew", "chaotic_aggressive", "chaotic_long_gate"],
-        index=1,
+        "Scenario",
+        ["peak", "chaotic", "light", "peak_left_skew", "peak_right_skew", "chaotic_aggressive", "chaotic_long_gate"],
+        index=0,
+        help="Choose traffic scenario. Peak = best for judging. Chaotic = most dramatic contrast.",
     )
-    seed = st.number_input("Random seed", min_value=1, max_value=999, value=11, step=1)
-    ensemble_path = st.text_input(
-        "Hybrid ensemble path",
-        value=str(ROOT / "artifacts" / "models" / "surrogate_ensemble.pkl"),
-    )
-    controller_path = st.text_input(
-        "Hybrid controller path",
-        value=str(ROOT / "artifacts" / "models" / "hybrid_controller.json"),
-    )
-    model_path = st.text_input(
-        "Legacy model path",
-        value=str(ROOT / "artifacts" / "models" / "surrogate.pkl"),
-    )
-    run_button = st.button("🚀 Run Full Simulation", type="primary", width='stretch')
-    st.caption("Initial load uses fast preview. Click above for full ML-powered analysis with all policies.")
+    seed = st.number_input("Random Seed", min_value=1, max_value=999, value=11, step=1)
 
+    st.markdown("---")
+    st.markdown("### 📁 Model Paths")
+    ensemble_path = st.text_input("Ensemble", value=str(ROOT / "artifacts" / "models" / "surrogate_ensemble.pkl"))
+    controller_path = st.text_input("Controller", value=str(ROOT / "artifacts" / "models" / "hybrid_controller.json"))
+    model_path = st.text_input("Legacy", value=str(ROOT / "artifacts" / "models" / "surrogate.pkl"))
+
+    st.markdown("---")
+    run_button = st.button("🚀 Run Full ML Simulation", type="primary", width='stretch')
+    st.caption("Initial load uses fast heuristic preview. Full mode runs all 4 policies with ML-powered counterfactual rollouts.")
+
+# ── Load Data ─────────────────────────────────────────────────
 if run_button:
     _run_cached_suite.clear()
     load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True, fast_mode=False)
@@ -258,7 +284,7 @@ results = st.session_state["quarryflow_results"]
 summary = st.session_state["quarryflow_summary"]
 scenario = st.session_state["quarryflow_scenario"]
 seed = st.session_state["quarryflow_seed"]
-model_label = st.session_state["quarryflow_model_label"]
+model_label = st.session_state.get("quarryflow_model_label", "heuristic-only")
 controller_metadata = st.session_state.get("quarryflow_controller_metadata", {})
 is_fast_mode = st.session_state.get("quarryflow_fast_mode", False)
 config = build_scenario(scenario, seed=seed)
@@ -266,591 +292,346 @@ learning_curve = read_optional_frame(ROOT / "artifacts" / "eval" / "learning_cur
 holdout_summary = read_optional_frame(ROOT / "artifacts" / "eval" / "holdout_summary.csv")
 validation_summary = read_optional_frame(ROOT / "artifacts" / "eval" / "validation_summary.csv")
 primary_policy = "Hybrid Adaptive" if "Hybrid Adaptive" in results else "Legacy Adaptive"
+comp = comparison_frame(results)
+impr = improvement_frame(results)
 
-comparison = comparison_frame(results)
-improvements = improvement_frame(results)
-adaptive_result = results[primary_policy]
-adaptive_history = history_frame(adaptive_result)
+# ── Mode indicator ────────────────────────────────────────────
+mode_label = "preview" if is_fast_mode else "live"
+mode_class = "preview" if is_fast_mode else "live"
+mode_text = "Fast Preview" if is_fast_mode else "Full ML Mode"
+st.markdown(f'<span class="status-badge {mode_class}">{mode_text}</span>', unsafe_allow_html=True)
 
-# ── Fast mode banner ──────────────────────────────────────────
-if is_fast_mode:
-    st.info("⚡ **Quick preview mode** — showing heuristic adaptive policy for speed. Click **Run Full Simulation** in the sidebar for ML-powered Hybrid Adaptive with all policies.", icon="⚡")
-
-# ── About QuarryFlow Section (fills blank space on initial page) ──────
-st.markdown(
-    """
-    <div class="about-section">
-      <div class="about-heading">About This Project</div>
-      <div class="about-body">
-        When a train passes and the barrier lifts, traffic <strong>should</strong> resume instantly — but it doesn't.
-        Vehicles from both sides rush the single crossing box simultaneously, creating disorder, lateral squeeze,
-        and conflict freezes that keep the road jammed long after the train is gone.
-        <strong>QuarryFlow Crossing</strong> models this bottleneck with a behaviour-aware microsimulator and
-        evaluates intelligent staged-release strategies that cut delay and improve flow
-        — without changing any physical infrastructure.
-      </div>
-      <div class="highlight-row">
-        <div class="highlight-card">
-          <div class="highlight-card-value">6</div>
-          <div class="highlight-card-label">Driver Profiles</div>
-        </div>
-        <div class="highlight-card">
-          <div class="highlight-card-value">3</div>
-          <div class="highlight-card-label">Vehicle Types</div>
-        </div>
-        <div class="highlight-card">
-          <div class="highlight-card-value">7</div>
-          <div class="highlight-card-label">Scenario Presets</div>
-        </div>
-        <div class="highlight-card">
-          <div class="highlight-card-value">4</div>
-          <div class="highlight-card-label">Release Policies</div>
-        </div>
-      </div>
-      <div class="feature-grid">
-        <div class="feature-item"><span class="feature-icon">⚙️</span> Event-driven microsimulation engine</div>
-        <div class="feature-item"><span class="feature-icon">🧠</span> ML surrogate + LinUCB bandit</div>
-        <div class="feature-item"><span class="feature-icon">🛡️</span> Safety shield vetoes risky actions</div>
-        <div class="feature-item"><span class="feature-icon">📊</span> Counterfactual policy comparison</div>
-        <div class="feature-item"><span class="feature-icon">🚗</span> Car, bike &amp; auto-rickshaw mix</div>
-        <div class="feature-item"><span class="feature-icon">🔄</span> Curriculum-trained adaptive controller</div>
-      </div>
-      <div class="tech-tags">
-        <span class="tech-tag">Python</span>
-        <span class="tech-tag">Streamlit</span>
-        <span class="tech-tag">Plotly</span>
-        <span class="tech-tag">scikit-learn</span>
-        <span class="tech-tag">NumPy</span>
-        <span class="tech-tag">Pandas</span>
-        <span class="tech-tag">Self-Generated Data</span>
-      </div>
+# ── About Section ─────────────────────────────────────────────
+st.markdown("""
+<div class="about-section">
+  <div class="about-heading">The Problem → The Approach → The Result</div>
+  <div class="about-body">
+    When a train passes and the barrier lifts, traffic <strong>should</strong> resume instantly — but it doesn't.
+    Vehicles from both sides rush the crossing box simultaneously, creating lateral squeeze, disorder,
+    and conflict freezes that keep the road jammed <strong>long after the train is gone</strong>.
+    QuarryFlow models this bottleneck with a behaviour-aware microsimulator, evaluates staged-release
+    strategies via counterfactual prediction, and picks the best action using a <strong>safety-shielded
+    contextual bandit</strong>.
+  </div>
+  <div class="highlight-row">
+    <div class="highlight-card">
+      <div class="highlight-card-value">6</div>
+      <div class="highlight-card-label">Driver Profiles</div>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+    <div class="highlight-card">
+      <div class="highlight-card-value">3</div>
+      <div class="highlight-card-label">Vehicle Classes</div>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-card-value">7</div>
+      <div class="highlight-card-label">Scenarios</div>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-card-value">4</div>
+      <div class="highlight-card-label">Policies Tested</div>
+    </div>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-item"><span class="feature-icon">⚙️</span> Event-driven microsimulation</div>
+    <div class="feature-item"><span class="feature-icon">🧠</span> Bootstrap ML surrogate</div>
+    <div class="feature-item"><span class="feature-icon">🛡️</span> Safety shield veto layer</div>
+    <div class="feature-item"><span class="feature-icon">📊</span> Counterfactual policy scoring</div>
+    <div class="feature-item"><span class="feature-icon">🚗</span> Car · Bike · Auto-rickshaw</div>
+    <div class="feature-item"><span class="feature-icon">🔄</span> Curriculum-trained controller</div>
+  </div>
+  <div class="tech-tags">
+    <span class="tech-tag">Python</span>
+    <span class="tech-tag">Streamlit</span>
+    <span class="tech-tag">Plotly</span>
+    <span class="tech-tag">scikit-learn</span>
+    <span class="tech-tag">NumPy</span>
+    <span class="tech-tag">Pandas</span>
+    <span class="tech-tag">Self-Generated Data</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-metric_cols = st.columns(4)
-with metric_cols[0]:
-    st.markdown(
-        metric_card(
-            "Delay Reduction",
-            pct(summary["adaptive_delay_gain_pct"]),
-            "vs free-flow reopening",
-            "",
-        ),
-        unsafe_allow_html=True,
-    )
-with metric_cols[1]:
-    st.markdown(
-        metric_card(
-            "Throughput Gain",
-            pct(summary["adaptive_throughput_gain_pct"]),
-            "more vehicles cleared",
-            "",
-        ),
-        unsafe_allow_html=True,
-    )
-with metric_cols[2]:
-    st.markdown(
-        metric_card(
-            "Peak Congestion Cut",
-            pct(summary["adaptive_congestion_gain_pct"]),
-            "less spillback",
-            "",
-        ),
-        unsafe_allow_html=True,
-    )
-with metric_cols[3]:
-    st.markdown(
-        metric_card(
-            "Live Scenario",
-            scenario.title(),
-            summary["best_policy"],
-            summary["scenario_description"],
-        ),
-        unsafe_allow_html=True,
-    )
+# ── Pipeline Diagram ──────────────────────────────────────────
+st.markdown("""
+<div class="pipeline-flow">
+  <div class="pipeline-step"><div class="pipeline-icon green">🚂</div><div class="pipeline-label">Train Schedule</div></div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step"><div class="pipeline-icon green">⚙️</div><div class="pipeline-label">Simulator</div></div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step"><div class="pipeline-icon cyan">📐</div><div class="pipeline-label">State Features</div></div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step"><div class="pipeline-icon amber">🧠</div><div class="pipeline-label">ML Surrogate</div></div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step"><div class="pipeline-icon purple">🎰</div><div class="pipeline-label">LinUCB Bandit</div></div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step"><div class="pipeline-icon green">🛡️</div><div class="pipeline-label">Safety Shield</div></div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step"><div class="pipeline-icon amber">📊</div><div class="pipeline-label">Dashboard</div></div>
+</div>
+""", unsafe_allow_html=True)
 
-tabs = st.tabs(["Impact Summary", "Traffic Story", "Crossing Replay", "Sensitivity Analysis", "Learning Under Constraints", "Technical Details"])
+# ── KPI Cards ─────────────────────────────────────────────────
+k1, k2, k3, k4 = st.columns(4)
+with k1:
+    st.markdown(metric_card("⏱️ Delay Reduction", pct(summary["adaptive_delay_gain_pct"]), "vs free-flow reopening", ""), unsafe_allow_html=True)
+with k2:
+    st.markdown(metric_card("🚗 Throughput Gain", pct(summary["adaptive_throughput_gain_pct"]), "vehicles cleared", ""), unsafe_allow_html=True)
+with k3:
+    st.markdown(metric_card("📏 Congestion Cut", pct(summary["adaptive_congestion_gain_pct"]), "peak spillback reduced", ""), unsafe_allow_html=True)
+with k4:
+    st.markdown(metric_card("🎯 Scenario", scenario.replace("_", " ").title(), summary["best_policy"], summary["scenario_description"]), unsafe_allow_html=True)
 
+# ═══════════════════════════════════════════════════════════════
+#  Tabs
+# ═══════════════════════════════════════════════════════════════
+
+tabs = st.tabs(["📊 Impact", "📈 Traffic Story", "🎬 Replay", "🔬 Sensitivity", "📚 Learning", "⚙️ Technical"])
+
+# ── Tab 0: Impact ─────────────────────────────────────────────
 with tabs[0]:
-    st.markdown(
-        f"""
-        <div class="section-note">
-          <strong>Impact Summary:</strong> {summary['impact_headline']}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(f"""<div class="section-note"><strong>Key Finding:</strong> {summary['impact_headline']}</div>""", unsafe_allow_html=True)
 
-    top_left, top_right = st.columns([1.15, 1.0])
-    with top_left:
-        bar = px.bar(
-            comparison,
-            x="policy",
-            y=["average_waiting_time", "throughput", "max_congestion_length"],
-            barmode="group",
-            title="Policy Comparison",
-        )
-        style_figure(bar)
+    c1, c2 = st.columns([1.15, 1.0])
+    with c1:
+        bar = px.bar(comp, x="policy", y=["average_waiting_time", "throughput", "max_congestion_length"],
+                     barmode="group", title="Policy Comparison — Key Metrics")
+        bar.update_layout(xaxis_title="", yaxis_title="Value", legend_title_text="")
         st.plotly_chart(bar, width='stretch')
-
-    with top_right:
-        improvement_long = improvements.melt(
+    with c2:
+        imp_long = impr.melt(
             id_vars=["policy"],
-            value_vars=[
-                "waiting_time_improvement_pct",
-                "throughput_improvement_pct",
-                "congestion_improvement_pct",
-            ],
-            var_name="metric",
-            value_name="improvement_pct",
+            value_vars=["waiting_time_improvement_pct", "throughput_improvement_pct", "congestion_improvement_pct"],
+            var_name="metric", value_name="improvement_pct",
         )
-        fig = px.bar(
-            improvement_long,
-            x="metric",
-            y="improvement_pct",
-            color="policy",
-            barmode="group",
-            title="Improvement vs Free Flow",
-        )
-        fig.update_layout(xaxis_title="", yaxis_title="Percent")
-        style_figure(fig)
+        imp_long["metric"] = imp_long["metric"].str.replace("_improvement_pct", "").str.replace("_", " ").str.title()
+        fig = px.bar(imp_long, x="metric", y="improvement_pct", color="policy", barmode="group",
+                     title="Improvement vs Free Flow Baseline")
+        fig.update_layout(xaxis_title="", yaxis_title="Improvement (%)", legend_title_text="")
         st.plotly_chart(fig, width='stretch')
 
+# ── Tab 1: Traffic Story ──────────────────────────────────────
 with tabs[1]:
-    st.markdown(
-        """
-        <div class="story-card">
-          <div class="story-title">Narrative Flow</div>
-          <div class="story-copy">
-            Red bands show train closures. The key moment is after each red zone ends:
-            the barrier is open, but congestion persists unless release behavior is coordinated.
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""<div class="story-card"><div class="story-title">Narrative Flow</div>
+    <div class="story-copy">Red bands mark train closures. The critical moment is <strong>after each closure ends</strong> —
+    the barrier is open, but congestion persists unless release behaviour is coordinated.</div></div>""", unsafe_allow_html=True)
 
     queue_frames = []
-    for policy_name, result in results.items():
-        history = history_frame(result)
-        if history.empty:
-            continue
-        melted = history.melt(
-            id_vars=["time"],
-            value_vars=["queue_left", "queue_right"],
-            var_name="queue_side",
-            value_name="queue_length",
-        )
-        melted["policy"] = policy_name
-        queue_frames.append(melted)
-    if not queue_frames:
-        st.info("Click **Run Full Simulation** in the sidebar to enable the Traffic Story charts.")
-    else:
-        queue_frame = pd.concat(queue_frames, ignore_index=True)
-        queue_fig = px.line(
-            queue_frame,
-            x="time",
-            y="queue_length",
-            color="policy",
-            line_dash="queue_side",
-            title="Queue Evolution by Policy and Side",
-        )
-        add_closure_bands(queue_fig, config.train_closures)
-        style_figure(queue_fig)
-        st.plotly_chart(queue_fig, width='stretch')
+    for pol, res in results.items():
+        h = history_frame(res)
+        if h.empty: continue
+        m = h.melt(id_vars=["time"], value_vars=["queue_left", "queue_right"], var_name="side", value_name="queue_m")
+        m["policy"] = pol
+        queue_frames.append(m)
+    if queue_frames:
+        qdf = pd.concat(queue_frames, ignore_index=True)
+        qfig = px.line(qdf, x="time", y="queue_m", color="policy", line_dash="side",
+                       title="Queue Evolution · Left vs Right by Policy")
+        add_closure_bands(qfig, config.train_closures)
+        st.plotly_chart(qfig, width='stretch')
 
     risk_frames = []
-    for policy_name, result in results.items():
-        history = history_frame(result)
-        if history.empty:
-            continue
-        trimmed = history[["time", "disorder_index", "occupancy_risk"]].copy()
-        trimmed["policy"] = policy_name
-        risk_frames.append(trimmed)
-    if not risk_frames:
-        pass  # already shown info above
-    else:
-        risk_frame = pd.concat(risk_frames, ignore_index=True)
-        risk_long = risk_frame.melt(
-            id_vars=["time", "policy"],
-            value_vars=["disorder_index", "occupancy_risk"],
-            var_name="metric",
-            value_name="value",
-        )
-        risk_fig = px.line(
-            risk_long,
-            x="time",
-            y="value",
-            color="policy",
-            facet_row="metric",
-            title="Disorder and Risk Trajectory",
-        )
-        add_closure_bands(risk_fig, config.train_closures)
-        style_figure(risk_fig)
-        risk_fig.update_yaxes(matches=None)
-        st.plotly_chart(risk_fig, width='stretch')
+    for pol, res in results.items():
+        h = history_frame(res)
+        if h.empty: continue
+        t = h[["time", "disorder_index", "occupancy_risk"]].copy()
+        t["policy"] = pol
+        risk_frames.append(t)
+    if risk_frames:
+        rdf = pd.concat(risk_frames, ignore_index=True)
+        rlong = rdf.melt(id_vars=["time", "policy"], value_vars=["disorder_index", "occupancy_risk"],
+                         var_name="metric", value_name="value")
+        rfig = px.line(rlong, x="time", y="value", color="policy", facet_row="metric",
+                       title="Disorder & Risk Trajectory")
+        add_closure_bands(rfig, config.train_closures)
+        rfig.update_yaxes(matches=None)
+        st.plotly_chart(rfig, width='stretch')
 
+# ── Tab 2: Replay ─────────────────────────────────────────────
 with tabs[2]:
-    policy_options = list(results)
-    default_index = policy_options.index(primary_policy) if primary_policy in policy_options else 0
-    chart_policy = st.selectbox("Replay policy", policy_options, index=default_index)
-    replay_result = results[chart_policy]
-    replay_history = history_frame(replay_result)
-    action_history = actions_frame(replay_result)
-    trace_history = decision_trace_frame(replay_result)
+    pol_opts = list(results)
+    default_idx = pol_opts.index(primary_policy) if primary_policy in pol_opts else 0
+    chart_pol = st.selectbox("Replay policy", pol_opts, index=default_idx)
+    rr = results[chart_pol]
+    rh = history_frame(rr)
+    ah = actions_frame(rr)
+    th = decision_trace_frame(rr)
 
-    if replay_history.empty:
-        st.info("Click **Run Full Simulation** in the sidebar to enable the Crossing Replay.")
+    if rh.empty:
+        st.info("Click **Run Full ML Simulation** in the sidebar to load replay data.")
     else:
-        replay_col, meta_col = st.columns([1.4, 0.9])
-        with replay_col:
-            step_index = st.slider(
-                "Simulation frame",
-                min_value=0,
-                max_value=len(replay_history) - 1,
-                value=min(70, len(replay_history) - 1),
-            )
-            vehicles = vehicle_frame(replay_result, step_index)
-            frame_time = float(replay_history.iloc[step_index]["time"])
-            if not vehicles.empty:
-                st.plotly_chart(
-                    build_snapshot_figure(vehicles, scenario, seed, frame_time),
-                    width='stretch',
-                )
+        rc, mc = st.columns([1.4, 0.9])
+        with rc:
+            si = st.slider("Frame", 0, len(rh) - 1, min(70, len(rh) - 1))
+            vf = vehicle_frame(rr, si)
+            ft = float(rh.iloc[si]["time"])
+            if not vf.empty:
+                st.plotly_chart(build_snapshot_figure(vf, scenario, seed, ft), width='stretch')
+        with mc:
+            snap = rr.snapshots[si]
+            st.markdown(metric_card("Barrier", "🔴 Closed" if snap.barrier_closed else "🟢 Open",
+                                    f"action: {snap.current_action}", ""), unsafe_allow_html=True)
+            st.markdown(metric_card("Queue Pressure",
+                                    f"{snap.queue_counts['left']} ← | → {snap.queue_counts['right']}",
+                                    "left | right vehicles",
+                                    f"{snap.queue_lengths['left']:.0f}m | {snap.queue_lengths['right']:.0f}m"), unsafe_allow_html=True)
+            st.markdown(metric_card("Risk", num(snap.occupancy_risk),
+                                    f"disorder: {num(snap.disorder_index)}",
+                                    f"occupancy: {snap.crossing_occupancy} · conflicts: {snap.conflict_count}"), unsafe_allow_html=True)
 
-        with meta_col:
-            snapshot = replay_result.snapshots[step_index]
-            st.markdown(
-                metric_card(
-                    "Barrier State",
-                    "Closed" if snapshot.barrier_closed else "Open",
-                    f"action: {snapshot.current_action}",
-                    "",
-                ),
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                metric_card(
-                    "Queue Pressure",
-                    f"{snapshot.queue_counts['left']} | {snapshot.queue_counts['right']}",
-                    "left | right vehicles",
-                    f"Queue length: {snapshot.queue_lengths['left']:.1f}m | {snapshot.queue_lengths['right']:.1f}m",
-                ),
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                metric_card(
-                    "Risk State",
-                    num(snapshot.occupancy_risk),
-                    f"disorder: {num(snapshot.disorder_index)}",
-                    f"Crossing occupancy: {snapshot.crossing_occupancy}, conflicts: {snapshot.conflict_count}",
-                ),
-                unsafe_allow_html=True,
-            )
-
-        summary_col, log_col = st.columns([0.8, 1.2])
-        with summary_col:
-            action_summary = action_summary_frame(replay_result)
-            if not action_summary.empty:
-                fig = px.bar(
-                    action_summary,
-                    x="share_pct",
-                    y="action",
-                    orientation="h",
-                    title="Action Mix",
-                    color="share_pct",
-                    color_continuous_scale=["#55f0a6", "#ffbf4d"],
-                )
-                style_figure(fig)
+        sc, lc = st.columns([0.8, 1.2])
+        with sc:
+            asum = action_summary_frame(rr)
+            if not asum.empty:
+                fig = px.bar(asum, x="share_pct", y="action", orientation="h", title="Action Mix",
+                             color="share_pct", color_continuous_scale=["#55f0a6", "#ffbf4d"])
                 st.plotly_chart(fig, width='stretch')
-
-        with log_col:
+        with lc:
             st.subheader("Decision Log")
-            if action_history.empty:
-                st.caption("No adaptive action log for this policy.")
+            if ah.empty:
+                st.caption("No log for this policy.")
             else:
-                st.dataframe(action_history, width='stretch', height=320)
+                st.dataframe(ah, width='stretch', height=320)
 
-        if trace_history.empty:
-            st.caption("No decision-trace rationale available for this policy.")
-        else:
-            trace_slice = trace_history[trace_history["time"] <= frame_time]
-            if trace_slice.empty:
-                trace_slice = trace_history.iloc[[0]]
-            trace_time = float(trace_slice["time"].max())
-            active_trace = trace_history[trace_history["time"] == trace_time].copy()
-            chosen = active_trace[active_trace["candidate_action"] == active_trace["chosen_action"]]
-            alt = active_trace[active_trace["candidate_action"] != active_trace["chosen_action"]]
-            rationale_left, rationale_right = st.columns([0.9, 1.1])
-            with rationale_left:
+        if not th.empty:
+            ts = th[th["time"] <= ft]
+            if ts.empty: ts = th.iloc[[0]]
+            tt = float(ts["time"].max())
+            at = th[th["time"] == tt].copy()
+            chosen = at[at["candidate_action"] == at["chosen_action"]]
+            alt = at[at["candidate_action"] != at["chosen_action"]]
+            rl, rr2 = st.columns([0.9, 1.1])
+            with rl:
                 st.subheader("Decision Rationale")
                 if not chosen.empty:
-                    chosen_row = chosen.iloc[0]
-                    st.markdown(
-                        metric_card(
-                            "Chosen Action",
-                            str(chosen_row["chosen_action"]),
-                            f"score: {num(float(chosen_row['score']))}",
-                            f"bandit bonus: {num(float(chosen_row['linucb_bonus']))}, uncertainty: {num(float(chosen_row['utility_std']))}",
-                        ),
-                        unsafe_allow_html=True,
-                    )
+                    cr = chosen.iloc[0]
+                    st.markdown(metric_card("✅ Chosen", str(cr["chosen_action"]),
+                                            f"score: {num(float(cr['score']))}",
+                                            f"bandit: {num(float(cr['linucb_bonus']))} · σ: {num(float(cr['utility_std']))}"),
+                                unsafe_allow_html=True)
                 if not alt.empty:
-                    alt_row = alt.sort_values("score", ascending=False).iloc[0]
-                    st.markdown(
-                        metric_card(
-                            "Top Alternative",
-                            str(alt_row["candidate_action"]),
-                            f"score: {num(float(alt_row['score']))}",
-                            f"veto: {alt_row['veto_reason'] or 'none'}",
-                        ),
-                        unsafe_allow_html=True,
-                    )
-            with rationale_right:
-                st.dataframe(active_trace, width='stretch', height=240, hide_index=True)
+                    ar = alt.sort_values("score", ascending=False).iloc[0]
+                    st.markdown(metric_card("❌ Alternative", str(ar["candidate_action"]),
+                                            f"score: {num(float(ar['score']))}",
+                                            f"veto: {ar['veto_reason'] or 'none'}"), unsafe_allow_html=True)
+            with rr2:
+                st.dataframe(at, width='stretch', height=240, hide_index=True)
 
-# ── Sensitivity Analysis Tab ──────────────────────────────────
+# ── Tab 3: Sensitivity ────────────────────────────────────────
 with tabs[3]:
-    st.markdown(
-        """
-        <div class="story-card">
-          <div class="story-title">Parameter Sensitivity Analysis</div>
-          <div class="story-copy">
-            Understanding <strong>which parameters drive congestion</strong> is key to effective intervention.
-            These charts show how delay, throughput, and congestion respond to changes in arrival rates,
-            driver aggression, and gate closure duration — and how much of that impact the adaptive policy absorbs.
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""<div class="story-card"><div class="story-title">Parameter Sensitivity Analysis</div>
+    <div class="story-copy">Understanding <strong>which parameters drive congestion</strong> is key to effective intervention.
+    These pre-computed charts show how delay, throughput, and congestion respond to changes in
+    arrival rates, driver aggression, and gate closure duration.</div></div>""", unsafe_allow_html=True)
 
-    arrival_data = read_optional_frame(ROOT / "artifacts" / "analysis" / "arrival_rate_sweep.csv")
-    aggression_data = read_optional_frame(ROOT / "artifacts" / "analysis" / "aggression_sweep.csv")
-    closure_data = read_optional_frame(ROOT / "artifacts" / "analysis" / "closure_duration_sweep.csv")
+    arr = read_optional_frame(ROOT / "artifacts" / "analysis" / "arrival_rate_sweep.csv")
+    agg = read_optional_frame(ROOT / "artifacts" / "analysis" / "aggression_sweep.csv")
+    clo = read_optional_frame(ROOT / "artifacts" / "analysis" / "closure_duration_sweep.csv")
 
-    if arrival_data.empty and aggression_data.empty and closure_data.empty:
+    if arr.empty and agg.empty and clo.empty:
         st.warning("Run `python scripts/precompute_analysis.py` to generate sensitivity data.")
     else:
-        # ── Arrival Rate Heatmap ──
-        if not arrival_data.empty:
-            st.subheader("📊 Arrival Rate vs Average Delay")
-            st.caption("How does increasing traffic from each side affect waiting time? The adaptive policy absorbs much of the pressure.")
-            arr_left, arr_right = st.columns(2)
-            for col, pol_label in [(arr_left, "Free Flow"), (arr_right, "Adaptive")]:
+        if not arr.empty:
+            st.subheader("📊 Arrival Rate vs Delay")
+            st.caption("How traffic volume from each side impacts waiting time. Adaptive policy absorbs pressure the free-flow approach cannot.")
+            al, ar2 = st.columns(2)
+            for col, label in [(al, "Free Flow"), (ar2, "Adaptive")]:
                 with col:
-                    subset = arrival_data[arrival_data["policy"] == pol_label]
-                    if not subset.empty:
-                        pivot = subset.pivot_table(
-                            index="arrival_left", columns="arrival_right",
-                            values="average_waiting_time", aggfunc="mean",
-                        )
-                        heatmap = go.Figure(data=go.Heatmap(
-                            z=pivot.values,
-                            x=[str(c) for c in pivot.columns],
-                            y=[str(r) for r in pivot.index],
-                            colorscale=[[0, "#0d1614"], [0.5, "#ffbf4d"], [1, "#ff6a6a"]],
-                            colorbar={"title": "Delay (s)"},
-                            text=pivot.values.round(1),
-                            texttemplate="%{text}",
+                    sub = arr[arr["policy"] == label]
+                    if not sub.empty:
+                        piv = sub.pivot_table(index="arrival_left", columns="arrival_right",
+                                              values="average_waiting_time", aggfunc="mean")
+                        hm = go.Figure(data=go.Heatmap(
+                            z=piv.values, x=[str(c) for c in piv.columns], y=[str(r) for r in piv.index],
+                            colorscale=[[0, "#0a1511"], [0.4, "#55f0a6"], [0.7, "#ffbf4d"], [1, "#ff6a6a"]],
+                            colorbar=dict(title="Delay (s)", len=0.8),
+                            text=piv.values.round(1), texttemplate="%{text}s", textfont=dict(size=11),
                         ))
-                        heatmap.update_layout(
-                            title=f"{pol_label}: Avg Wait Time",
-                            xaxis_title="Right Arrival (veh/min)",
-                            yaxis_title="Left Arrival (veh/min)",
-                            height=380,
-                        )
-                        style_figure(heatmap)
-                        st.plotly_chart(heatmap, width='stretch')
+                        hm.update_layout(title=f"{label}", xaxis_title="Right (veh/min)",
+                                         yaxis_title="Left (veh/min)", height=380)
+                        st.plotly_chart(hm, width='stretch')
 
-        # ── Driver Aggression Impact ──
-        if not aggression_data.empty:
+        if not agg.empty:
             st.subheader("🧠 Driver Aggression Impact")
-            st.caption("Shifting the driver population from calm to reckless dramatically increases disorder — but adaptive policies mitigate it.")
-            agg_fig = px.bar(
-                aggression_data,
-                x="driver_mix",
-                y="average_waiting_time",
-                color="policy",
-                barmode="group",
-                title="Wait Time by Driver Aggression Mix",
-                category_orders={"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]},
-            )
-            agg_fig.update_layout(xaxis_title="Driver Population Profile", yaxis_title="Avg Wait Time (s)")
-            style_figure(agg_fig)
-            st.plotly_chart(agg_fig, width='stretch')
+            cat_order = {"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]}
+            ag1, ag2 = st.columns(2)
+            with ag1:
+                fig = px.bar(agg, x="driver_mix", y="average_waiting_time", color="policy",
+                             barmode="group", title="Wait Time by Driver Mix", category_orders=cat_order)
+                fig.update_layout(xaxis_title="Population Profile", yaxis_title="Avg Wait (s)")
+                st.plotly_chart(fig, width='stretch')
+            with ag2:
+                fig = px.bar(agg, x="driver_mix", y="disorder_peak", color="policy",
+                             barmode="group", title="Peak Disorder by Driver Mix", category_orders=cat_order)
+                fig.update_layout(xaxis_title="Population Profile", yaxis_title="Disorder Index")
+                st.plotly_chart(fig, width='stretch')
 
-            # Also show throughput
-            agg_cols = st.columns(2)
-            with agg_cols[0]:
-                throughput_fig = px.bar(
-                    aggression_data,
-                    x="driver_mix",
-                    y="throughput",
-                    color="policy",
-                    barmode="group",
-                    title="Throughput by Driver Mix",
-                    category_orders={"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]},
-                )
-                throughput_fig.update_layout(xaxis_title="", yaxis_title="Throughput (veh/hr)")
-                style_figure(throughput_fig)
-                st.plotly_chart(throughput_fig, width='stretch')
-            with agg_cols[1]:
-                disorder_fig = px.bar(
-                    aggression_data,
-                    x="driver_mix",
-                    y="disorder_peak",
-                    color="policy",
-                    barmode="group",
-                    title="Peak Disorder by Driver Mix",
-                    category_orders={"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]},
-                )
-                disorder_fig.update_layout(xaxis_title="", yaxis_title="Peak Disorder Index")
-                style_figure(disorder_fig)
-                st.plotly_chart(disorder_fig, width='stretch')
+        if not clo.empty:
+            st.subheader("⏱️ Closure Duration Impact")
+            cl1, cl2 = st.columns(2)
+            with cl1:
+                fig = px.line(clo, x="closure_duration_s", y="average_waiting_time", color="policy",
+                              markers=True, title="Wait Time vs Closure Duration")
+                fig.update_layout(xaxis_title="Duration (s)", yaxis_title="Avg Wait (s)")
+                st.plotly_chart(fig, width='stretch')
+            with cl2:
+                fig = px.line(clo, x="closure_duration_s", y="throughput", color="policy",
+                              markers=True, title="Throughput vs Closure Duration")
+                fig.update_layout(xaxis_title="Duration (s)", yaxis_title="Throughput (veh/hr)")
+                st.plotly_chart(fig, width='stretch')
 
-        # ── Closure Duration Impact ──
-        if not closure_data.empty:
-            st.subheader("⏱️ Gate Closure Duration Impact")
-            st.caption("Longer gate closures create larger queues. The grey area shows the gap the adaptive policy closes vs free flow.")
-            closure_fig = px.line(
-                closure_data,
-                x="closure_duration_s",
-                y="average_waiting_time",
-                color="policy",
-                markers=True,
-                title="Wait Time vs Closure Duration",
-            )
-            closure_fig.update_layout(
-                xaxis_title="Gate Closure Duration (seconds)",
-                yaxis_title="Avg Wait Time (s)",
-            )
-            style_figure(closure_fig)
-            st.plotly_chart(closure_fig, width='stretch')
-
-            closure_cols = st.columns(2)
-            with closure_cols[0]:
-                ct_fig = px.line(
-                    closure_data,
-                    x="closure_duration_s",
-                    y="throughput",
-                    color="policy",
-                    markers=True,
-                    title="Throughput vs Closure Duration",
-                )
-                ct_fig.update_layout(xaxis_title="Closure Duration (s)", yaxis_title="Throughput (veh/hr)")
-                style_figure(ct_fig)
-                st.plotly_chart(ct_fig, width='stretch')
-            with closure_cols[1]:
-                cc_fig = px.line(
-                    closure_data,
-                    x="closure_duration_s",
-                    y="max_congestion_length",
-                    color="policy",
-                    markers=True,
-                    title="Congestion Length vs Closure Duration",
-                )
-                cc_fig.update_layout(xaxis_title="Closure Duration (s)", yaxis_title="Max Congestion (m)")
-                style_figure(cc_fig)
-                st.plotly_chart(cc_fig, width='stretch')
-
-# ── Learning Under Constraints Tab ────────────────────────────
+# ── Tab 4: Learning ───────────────────────────────────────────
 with tabs[4]:
-    st.subheader("Learning Curve")
+    st.subheader("Curriculum Learning Curve")
     if learning_curve.empty:
-        st.caption(
-            "Run `python scripts/train_hybrid_controller.py --profile fast --scenarios light peak chaotic --stage-passes 1 --n-models 2` to generate learning artifacts."
-        )
+        st.caption("Run `python scripts/train_hybrid_controller.py --profile fast` to generate learning artifacts.")
     else:
-        curve_fig = px.line(
-            learning_curve,
-            x="iteration",
-            y=["validation_hybrid_reward", "validation_legacy_reward", "best_validation_reward"],
-            markers=True,
-            title="Curriculum Validation Reward",
-        )
-        style_figure(curve_fig)
-        st.plotly_chart(curve_fig, width='stretch')
+        cfig = px.line(learning_curve, x="iteration",
+                       y=["validation_hybrid_reward", "validation_legacy_reward", "best_validation_reward"],
+                       markers=True, title="Validation Reward Across Curriculum Stages")
+        st.plotly_chart(cfig, width='stretch')
         st.dataframe(learning_curve, width='stretch', hide_index=True)
 
-    holdout_left, holdout_right = st.columns([1.0, 1.0])
-    with holdout_left:
+    h1, h2 = st.columns(2)
+    with h1:
         st.subheader("Validation Summary")
-        if validation_summary.empty:
-            st.caption("No validation summary found.")
-        else:
-            st.dataframe(validation_summary, width='stretch', hide_index=True)
-    with holdout_right:
+        if validation_summary.empty: st.caption("Not available.")
+        else: st.dataframe(validation_summary, width='stretch', hide_index=True)
+    with h2:
         st.subheader("Holdout Summary")
-        if holdout_summary.empty:
-            st.caption("No holdout summary found.")
-        else:
-            st.dataframe(holdout_summary, width='stretch', hide_index=True)
+        if holdout_summary.empty: st.caption("Not available.")
+        else: st.dataframe(holdout_summary, width='stretch', hide_index=True)
 
     if controller_metadata:
-        st.subheader("Hybrid Gate")
+        st.subheader("Hybrid Gate Metrics")
         st.json(controller_metadata.get("gate_metrics", {}))
-        st.caption(
-            "Hybrid default enabled."
-            if controller_metadata.get("hybrid_default_ok")
-            else "Hybrid retained as visible technical-depth mode; legacy adaptive remains the safer default."
-        )
 
+# ── Tab 5: Technical ──────────────────────────────────────────
 with tabs[5]:
-    pitch_markdown = build_pitch_markdown(results, scenario, model_label=model_label)
-    depth_left, depth_right = st.columns([1.0, 1.0])
-
-    with depth_left:
+    pitch_md = build_pitch_markdown(results, scenario, model_label=model_label)
+    t1, t2 = st.columns(2)
+    with t1:
         st.subheader("Technical Stack")
-        stack = pd.DataFrame(
-            [
-                {"Layer": "Simulation", "Details": "Event-driven railway-crossing microsimulation with mixed vehicles and behavior profiles"},
-                {"Layer": "State Features", "Details": "Queue lengths, disorder index, occupancy risk, aggressive share, and pressure imbalance"},
-                {"Layer": "Counterfactual Model", "Details": f"Bootstrap surrogate ensemble using {model_label}"},
-                {"Layer": "Residual Learner", "Details": "LinUCB residual policy trained on simulator-derived horizon reward"},
-                {"Layer": "Safety Shield", "Details": "Vetoes actions predicted to create high occupancy risk or unfair starvation"},
-            ]
-        )
-        st.dataframe(stack, width='stretch', hide_index=True)
-
-        st.subheader("Assumptions & Data Source")
+        st.dataframe(pd.DataFrame([
+            {"Layer": "🔧 Simulation", "Details": "Event-driven microsimulation with mixed vehicles & behavior profiles"},
+            {"Layer": "📐 Features", "Details": "Queue, disorder, occupancy risk, aggressive share, pressure imbalance"},
+            {"Layer": "🧠 Model", "Details": f"Bootstrap surrogate ensemble ({model_label})"},
+            {"Layer": "🎰 Learner", "Details": "LinUCB residual policy trained on simulator horizon reward"},
+            {"Layer": "🛡️ Shield", "Details": "Vetoes actions with high occupancy risk or starvation tendency"},
+        ]), width='stretch', hide_index=True)
+        st.subheader("Assumptions")
         st.markdown(build_assumptions_markdown())
-
-    with depth_right:
-        st.subheader("Comparison Table")
-        st.dataframe(comparison, width='stretch', hide_index=True)
+    with t2:
+        st.subheader("Policy Comparison")
+        st.dataframe(comp, width='stretch', hide_index=True)
         st.subheader("Improvement Table")
-        st.dataframe(improvements, width='stretch', hide_index=True)
+        st.dataframe(impr, width='stretch', hide_index=True)
 
-    report_col, assumptions_col = st.columns([1.0, 1.0])
-    with report_col:
-        st.subheader("Download Report")
-        st.download_button(
-            "Download markdown report",
-            data=pitch_markdown,
-            file_name=f"quarryflow_{scenario}_report.md",
-            mime="text/markdown",
-            width='stretch',
-        )
-    with assumptions_col:
-        st.subheader("Download Assumptions")
-        st.download_button(
-            "Download assumptions sheet",
-            data=build_assumptions_markdown(),
-            file_name="quarryflow_assumptions.md",
-            mime="text/markdown",
-            width='stretch',
-        )
-    st.code(
-        """flowchart LR
-A["Train Closure Schedule"] --> B["Railway-Crossing Simulator"]
-B --> C["State Snapshot Features"]
-C --> D["Surrogate Ensemble"]
-D --> E["LinUCB Residual + Safety Shield"]
-E --> B
-B --> F["Metrics: Delay, Throughput, Congestion, Risk"]
-F --> G["User Dashboard"]""",
-        language="mermaid",
-    )
+    d1, d2 = st.columns(2)
+    with d1:
+        st.download_button("📄 Download Report", data=pitch_md,
+                           file_name=f"quarryflow_{scenario}_report.md", mime="text/markdown",
+                           width='stretch')
+    with d2:
+        st.download_button("📋 Download Assumptions", data=build_assumptions_markdown(),
+                           file_name="quarryflow_assumptions.md", mime="text/markdown",
+                           width='stretch')
