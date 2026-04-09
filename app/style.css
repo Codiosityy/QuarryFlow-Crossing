@@ -46,8 +46,8 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.stApp * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+.stApp *:not(i):not(.material-icons):not([class*="icon"]):not(svg):not(path) {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .block-container {
