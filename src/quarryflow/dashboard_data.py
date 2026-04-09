@@ -13,15 +13,21 @@ from .scenarios import build_scenario
 from .simulator import RailwayCrossingSimulator
 
 
-def _apply_dashboard_tuning(config):
+def _apply_dashboard_tuning(config, *, fast_mode: bool = False):
     """Patch scenario config for faster dashboard runs.
 
     Reduces prediction_horizon (90 → 45 s).  This halves the number
     of steps in each counterfactual rollout while still capturing the
     full post-gate-reopening congestion dynamics.  The core physics,
     vehicle mix, and metric calculations remain identical.
+
+    When fast_mode is True, also increases time_step to 1.0 for a
+    ~2x speedup on initial loads.
     """
     config.prediction_horizon = 45.0
+    if fast_mode:
+        config.prediction_horizon = 30.0
+        config.time_step = 1.0
     return config
 
 
@@ -34,8 +40,12 @@ def run_policy_suite(
     controller_path: str | None = None,
     record_history: bool = True,
     record_every: int = 2,
+    fast_mode: bool = False,
+    progress_callback=None,
 ):
-    config = _apply_dashboard_tuning(build_scenario(scenario_name, seed=seed))
+    config = _apply_dashboard_tuning(
+        build_scenario(scenario_name, seed=seed), fast_mode=fast_mode
+    )
     legacy_model = None
     if model_path:
         candidate = Path(model_path)
@@ -57,9 +67,15 @@ def run_policy_suite(
     policies = {
         "Free Flow": FreeFlowPolicy(),
         "Static Alternating": StaticAlternatingPolicy(),
-        "Legacy Adaptive": AdaptivePolicy(model=legacy_model or ensemble),
     }
-    if ensemble is not None and bandit is not None and controller_config is not None:
+
+    if fast_mode:
+        # Heuristic-only adaptive for fast initial loads (no rollout overhead)
+        policies["Legacy Adaptive"] = AdaptivePolicy(model=None)
+    else:
+        policies["Legacy Adaptive"] = AdaptivePolicy(model=legacy_model or ensemble)
+
+    if not fast_mode and ensemble is not None and bandit is not None and controller_config is not None:
         policies["Hybrid Adaptive"] = HybridAdaptivePolicy(
             model=ensemble,
             bandit=bandit,
@@ -67,7 +83,10 @@ def run_policy_suite(
         )
 
     results = {}
-    for label, policy in policies.items():
+    total_policies = len(policies)
+    for idx, (label, policy) in enumerate(policies.items()):
+        if progress_callback:
+            progress_callback(idx / total_policies, f"Running {label}...")
         simulator = RailwayCrossingSimulator(config, seed=seed)
         if record_history and record_every > 1:
             # Subsample: run step-by-step, only record on every Nth step
@@ -81,6 +100,8 @@ def run_policy_suite(
             results[label] = simulator._build_result()
         else:
             results[label] = simulator.run_episode(policy, record_history=record_history)
+    if progress_callback:
+        progress_callback(1.0, "Done")
     return results
 
 

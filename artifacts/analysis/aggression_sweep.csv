@@ -1,0 +1,9 @@
+policy,average_waiting_time,throughput,max_congestion_length,clearance_time,fairness_gap,conflict_count,vehicles_cleared,disorder_peak,driver_mix
+Free Flow,198.47,726.0,610.48,192.75,0.008,7,121,0.384,Calm
+Adaptive,99.97,1350.0,333.21,192.75,0.138,0,225,0.263,Calm
+Free Flow,158.05,1020.0,459.69,192.75,0.024,5,170,0.448,Normal
+Adaptive,107.96,1368.0,327.3,192.75,0.053,0,228,0.487,Normal
+Free Flow,145.9,1158.0,393.63,192.75,0.005,5,193,0.516,Aggressive
+Adaptive,116.55,1314.0,327.26,192.75,0.087,0,219,0.559,Aggressive
+Free Flow,154.28,1044.0,422.24,192.75,0.034,5,174,0.613,Reckless
+Adaptive,97.71,1482.0,287.61,192.75,0.053,0,247,0.603,Reckless

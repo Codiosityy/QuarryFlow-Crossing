@@ -137,7 +137,7 @@ def build_snapshot_figure(vehicles: pd.DataFrame, scenario_name: str, seed: int,
 
 
 @st.cache_data(show_spinner=False, ttl=3600)
-def _run_cached_suite(scenario: str, seed: int, model_path: str | None, ensemble_path: str | None, controller_path: str | None, record_history: bool):
+def _run_cached_suite(scenario: str, seed: int, model_path: str | None, ensemble_path: str | None, controller_path: str | None, record_history: bool, fast_mode: bool):
     """Cached wrapper — returns a plain dict so Streamlit can hash it."""
     return run_policy_suite(
         scenario,
@@ -146,22 +146,40 @@ def _run_cached_suite(scenario: str, seed: int, model_path: str | None, ensemble
         ensemble_path=ensemble_path,
         controller_path=controller_path,
         record_history=record_history,
+        fast_mode=fast_mode,
     )
 
 
-def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, controller_path: str, *, record_history: bool = True) -> None:
+def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, controller_path: str, *, record_history: bool = True, fast_mode: bool = False) -> None:
     model_path_arg = model_path if model_path and Path(model_path).exists() else None
     ensemble_path_arg = ensemble_path if ensemble_path and Path(ensemble_path).exists() else None
     controller_path_arg = controller_path if controller_path and Path(controller_path).exists() else None
-    with st.spinner("Running simulations — comparing policies…"):
-        results = _run_cached_suite(
+
+    if fast_mode:
+        with st.spinner("⚡ Quick loading preview..."):
+            results = _run_cached_suite(
+                scenario,
+                seed=seed,
+                model_path=model_path_arg,
+                ensemble_path=ensemble_path_arg,
+                controller_path=controller_path_arg,
+                record_history=record_history,
+                fast_mode=True,
+            )
+    else:
+        progress_bar = st.progress(0, text="Preparing full simulation...")
+        results = run_policy_suite(
             scenario,
             seed=seed,
             model_path=model_path_arg,
             ensemble_path=ensemble_path_arg,
             controller_path=controller_path_arg,
             record_history=record_history,
+            fast_mode=False,
+            progress_callback=lambda pct_val, msg: progress_bar.progress(min(pct_val, 1.0), text=msg),
         )
+        progress_bar.empty()
+
     st.session_state["quarryflow_results"] = results
     st.session_state["quarryflow_summary"] = judge_summary(results, scenario)
     st.session_state["quarryflow_scenario"] = scenario
@@ -169,15 +187,16 @@ def load_run(scenario: str, seed: int, model_path: str, ensemble_path: str, cont
     st.session_state["quarryflow_model_path"] = model_path_arg
     st.session_state["quarryflow_ensemble_path"] = ensemble_path_arg
     st.session_state["quarryflow_controller_path"] = controller_path_arg
-    if ensemble_path_arg:
+    st.session_state["quarryflow_fast_mode"] = fast_mode
+    if not fast_mode and ensemble_path_arg:
         from quarryflow.model import BootstrapSurrogateEnsemble  # noqa: E402
 
         st.session_state["quarryflow_model_label"] = BootstrapSurrogateEnsemble.load(ensemble_path_arg).backend
-    elif model_path_arg:
+    elif not fast_mode and model_path_arg:
         st.session_state["quarryflow_model_label"] = SurrogateModel.load(model_path_arg).backend
     else:
         st.session_state["quarryflow_model_label"] = "heuristic-only adaptive control"
-    if controller_path_arg:
+    if not fast_mode and controller_path_arg:
         _, _, metadata = load_hybrid_controller(controller_path_arg)
         st.session_state["quarryflow_controller_metadata"] = metadata
     else:
@@ -198,6 +217,8 @@ st.markdown(
       <div class="tag-row">
         <span class="tag-chip">Mixed Traffic Simulation</span>
         <span class="tag-chip">Adaptive Control</span>
+        <span class="tag-chip">ML Surrogate + LinUCB</span>
+        <span class="tag-chip">Safety Shield</span>
       </div>
     </div>
     """,
@@ -224,13 +245,14 @@ with st.sidebar:
         "Legacy model path",
         value=str(ROOT / "artifacts" / "models" / "surrogate.pkl"),
     )
-    run_button = st.button("Run Simulation", type="primary", width="stretch")
+    run_button = st.button("🚀 Run Full Simulation", type="primary", width='stretch')
+    st.caption("Initial load uses fast preview. Click above for full ML-powered analysis with all policies.")
 
 if run_button:
     _run_cached_suite.clear()
-    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True)
+    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True, fast_mode=False)
 elif "quarryflow_results" not in st.session_state:
-    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=False)
+    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True, fast_mode=True)
 
 results = st.session_state["quarryflow_results"]
 summary = st.session_state["quarryflow_summary"]
@@ -238,6 +260,7 @@ scenario = st.session_state["quarryflow_scenario"]
 seed = st.session_state["quarryflow_seed"]
 model_label = st.session_state["quarryflow_model_label"]
 controller_metadata = st.session_state.get("quarryflow_controller_metadata", {})
+is_fast_mode = st.session_state.get("quarryflow_fast_mode", False)
 config = build_scenario(scenario, seed=seed)
 learning_curve = read_optional_frame(ROOT / "artifacts" / "eval" / "learning_curve.csv")
 holdout_summary = read_optional_frame(ROOT / "artifacts" / "eval" / "holdout_summary.csv")
@@ -248,6 +271,10 @@ comparison = comparison_frame(results)
 improvements = improvement_frame(results)
 adaptive_result = results[primary_policy]
 adaptive_history = history_frame(adaptive_result)
+
+# ── Fast mode banner ──────────────────────────────────────────
+if is_fast_mode:
+    st.info("⚡ **Quick preview mode** — showing heuristic adaptive policy for speed. Click **Run Full Simulation** in the sidebar for ML-powered Hybrid Adaptive with all policies.", icon="⚡")
 
 # ── About QuarryFlow Section (fills blank space on initial page) ──────
 st.markdown(
@@ -344,7 +371,7 @@ with metric_cols[3]:
         unsafe_allow_html=True,
     )
 
-tabs = st.tabs(["Impact Summary", "Traffic Story", "Crossing Replay", "Learning Under Constraints", "Technical Details"])
+tabs = st.tabs(["Impact Summary", "Traffic Story", "Crossing Replay", "Sensitivity Analysis", "Learning Under Constraints", "Technical Details"])
 
 with tabs[0]:
     st.markdown(
@@ -366,7 +393,7 @@ with tabs[0]:
             title="Policy Comparison",
         )
         style_figure(bar)
-        st.plotly_chart(bar, width="stretch")
+        st.plotly_chart(bar, width='stretch')
 
     with top_right:
         improvement_long = improvements.melt(
@@ -389,7 +416,7 @@ with tabs[0]:
         )
         fig.update_layout(xaxis_title="", yaxis_title="Percent")
         style_figure(fig)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, width='stretch')
 
 with tabs[1]:
     st.markdown(
@@ -419,7 +446,7 @@ with tabs[1]:
         melted["policy"] = policy_name
         queue_frames.append(melted)
     if not queue_frames:
-        st.info("Click **Run Simulation** in the sidebar to enable the Traffic Story charts.")
+        st.info("Click **Run Full Simulation** in the sidebar to enable the Traffic Story charts.")
     else:
         queue_frame = pd.concat(queue_frames, ignore_index=True)
         queue_fig = px.line(
@@ -432,7 +459,7 @@ with tabs[1]:
         )
         add_closure_bands(queue_fig, config.train_closures)
         style_figure(queue_fig)
-        st.plotly_chart(queue_fig, width="stretch")
+        st.plotly_chart(queue_fig, width='stretch')
 
     risk_frames = []
     for policy_name, result in results.items():
@@ -463,7 +490,7 @@ with tabs[1]:
         add_closure_bands(risk_fig, config.train_closures)
         style_figure(risk_fig)
         risk_fig.update_yaxes(matches=None)
-        st.plotly_chart(risk_fig, width="stretch")
+        st.plotly_chart(risk_fig, width='stretch')
 
 with tabs[2]:
     policy_options = list(results)
@@ -475,7 +502,7 @@ with tabs[2]:
     trace_history = decision_trace_frame(replay_result)
 
     if replay_history.empty:
-        st.info("Click **Run Simulation** in the sidebar to enable the Crossing Replay. The initial load skips history recording for speed.")
+        st.info("Click **Run Full Simulation** in the sidebar to enable the Crossing Replay.")
     else:
         replay_col, meta_col = st.columns([1.4, 0.9])
         with replay_col:
@@ -490,7 +517,7 @@ with tabs[2]:
             if not vehicles.empty:
                 st.plotly_chart(
                     build_snapshot_figure(vehicles, scenario, seed, frame_time),
-                    width="stretch",
+                    width='stretch',
                 )
 
         with meta_col:
@@ -537,14 +564,14 @@ with tabs[2]:
                     color_continuous_scale=["#55f0a6", "#ffbf4d"],
                 )
                 style_figure(fig)
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig, width='stretch')
 
         with log_col:
             st.subheader("Decision Log")
             if action_history.empty:
                 st.caption("No adaptive action log for this policy.")
             else:
-                st.dataframe(action_history, width="stretch", height=320)
+                st.dataframe(action_history, width='stretch', height=320)
 
         if trace_history.empty:
             st.caption("No decision-trace rationale available for this policy.")
@@ -582,9 +609,155 @@ with tabs[2]:
                         unsafe_allow_html=True,
                     )
             with rationale_right:
-                st.dataframe(active_trace, width="stretch", height=240, hide_index=True)
+                st.dataframe(active_trace, width='stretch', height=240, hide_index=True)
 
+# ── Sensitivity Analysis Tab ──────────────────────────────────
 with tabs[3]:
+    st.markdown(
+        """
+        <div class="story-card">
+          <div class="story-title">Parameter Sensitivity Analysis</div>
+          <div class="story-copy">
+            Understanding <strong>which parameters drive congestion</strong> is key to effective intervention.
+            These charts show how delay, throughput, and congestion respond to changes in arrival rates,
+            driver aggression, and gate closure duration — and how much of that impact the adaptive policy absorbs.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    arrival_data = read_optional_frame(ROOT / "artifacts" / "analysis" / "arrival_rate_sweep.csv")
+    aggression_data = read_optional_frame(ROOT / "artifacts" / "analysis" / "aggression_sweep.csv")
+    closure_data = read_optional_frame(ROOT / "artifacts" / "analysis" / "closure_duration_sweep.csv")
+
+    if arrival_data.empty and aggression_data.empty and closure_data.empty:
+        st.warning("Run `python scripts/precompute_analysis.py` to generate sensitivity data.")
+    else:
+        # ── Arrival Rate Heatmap ──
+        if not arrival_data.empty:
+            st.subheader("📊 Arrival Rate vs Average Delay")
+            st.caption("How does increasing traffic from each side affect waiting time? The adaptive policy absorbs much of the pressure.")
+            arr_left, arr_right = st.columns(2)
+            for col, pol_label in [(arr_left, "Free Flow"), (arr_right, "Adaptive")]:
+                with col:
+                    subset = arrival_data[arrival_data["policy"] == pol_label]
+                    if not subset.empty:
+                        pivot = subset.pivot_table(
+                            index="arrival_left", columns="arrival_right",
+                            values="average_waiting_time", aggfunc="mean",
+                        )
+                        heatmap = go.Figure(data=go.Heatmap(
+                            z=pivot.values,
+                            x=[str(c) for c in pivot.columns],
+                            y=[str(r) for r in pivot.index],
+                            colorscale=[[0, "#0d1614"], [0.5, "#ffbf4d"], [1, "#ff6a6a"]],
+                            colorbar={"title": "Delay (s)"},
+                            text=pivot.values.round(1),
+                            texttemplate="%{text}",
+                        ))
+                        heatmap.update_layout(
+                            title=f"{pol_label}: Avg Wait Time",
+                            xaxis_title="Right Arrival (veh/min)",
+                            yaxis_title="Left Arrival (veh/min)",
+                            height=380,
+                        )
+                        style_figure(heatmap)
+                        st.plotly_chart(heatmap, width='stretch')
+
+        # ── Driver Aggression Impact ──
+        if not aggression_data.empty:
+            st.subheader("🧠 Driver Aggression Impact")
+            st.caption("Shifting the driver population from calm to reckless dramatically increases disorder — but adaptive policies mitigate it.")
+            agg_fig = px.bar(
+                aggression_data,
+                x="driver_mix",
+                y="average_waiting_time",
+                color="policy",
+                barmode="group",
+                title="Wait Time by Driver Aggression Mix",
+                category_orders={"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]},
+            )
+            agg_fig.update_layout(xaxis_title="Driver Population Profile", yaxis_title="Avg Wait Time (s)")
+            style_figure(agg_fig)
+            st.plotly_chart(agg_fig, width='stretch')
+
+            # Also show throughput
+            agg_cols = st.columns(2)
+            with agg_cols[0]:
+                throughput_fig = px.bar(
+                    aggression_data,
+                    x="driver_mix",
+                    y="throughput",
+                    color="policy",
+                    barmode="group",
+                    title="Throughput by Driver Mix",
+                    category_orders={"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]},
+                )
+                throughput_fig.update_layout(xaxis_title="", yaxis_title="Throughput (veh/hr)")
+                style_figure(throughput_fig)
+                st.plotly_chart(throughput_fig, width='stretch')
+            with agg_cols[1]:
+                disorder_fig = px.bar(
+                    aggression_data,
+                    x="driver_mix",
+                    y="disorder_peak",
+                    color="policy",
+                    barmode="group",
+                    title="Peak Disorder by Driver Mix",
+                    category_orders={"driver_mix": ["Calm", "Normal", "Aggressive", "Reckless"]},
+                )
+                disorder_fig.update_layout(xaxis_title="", yaxis_title="Peak Disorder Index")
+                style_figure(disorder_fig)
+                st.plotly_chart(disorder_fig, width='stretch')
+
+        # ── Closure Duration Impact ──
+        if not closure_data.empty:
+            st.subheader("⏱️ Gate Closure Duration Impact")
+            st.caption("Longer gate closures create larger queues. The grey area shows the gap the adaptive policy closes vs free flow.")
+            closure_fig = px.line(
+                closure_data,
+                x="closure_duration_s",
+                y="average_waiting_time",
+                color="policy",
+                markers=True,
+                title="Wait Time vs Closure Duration",
+            )
+            closure_fig.update_layout(
+                xaxis_title="Gate Closure Duration (seconds)",
+                yaxis_title="Avg Wait Time (s)",
+            )
+            style_figure(closure_fig)
+            st.plotly_chart(closure_fig, width='stretch')
+
+            closure_cols = st.columns(2)
+            with closure_cols[0]:
+                ct_fig = px.line(
+                    closure_data,
+                    x="closure_duration_s",
+                    y="throughput",
+                    color="policy",
+                    markers=True,
+                    title="Throughput vs Closure Duration",
+                )
+                ct_fig.update_layout(xaxis_title="Closure Duration (s)", yaxis_title="Throughput (veh/hr)")
+                style_figure(ct_fig)
+                st.plotly_chart(ct_fig, width='stretch')
+            with closure_cols[1]:
+                cc_fig = px.line(
+                    closure_data,
+                    x="closure_duration_s",
+                    y="max_congestion_length",
+                    color="policy",
+                    markers=True,
+                    title="Congestion Length vs Closure Duration",
+                )
+                cc_fig.update_layout(xaxis_title="Closure Duration (s)", yaxis_title="Max Congestion (m)")
+                style_figure(cc_fig)
+                st.plotly_chart(cc_fig, width='stretch')
+
+# ── Learning Under Constraints Tab ────────────────────────────
+with tabs[4]:
     st.subheader("Learning Curve")
     if learning_curve.empty:
         st.caption(
@@ -599,8 +772,8 @@ with tabs[3]:
             title="Curriculum Validation Reward",
         )
         style_figure(curve_fig)
-        st.plotly_chart(curve_fig, width="stretch")
-        st.dataframe(learning_curve, width="stretch", hide_index=True)
+        st.plotly_chart(curve_fig, width='stretch')
+        st.dataframe(learning_curve, width='stretch', hide_index=True)
 
     holdout_left, holdout_right = st.columns([1.0, 1.0])
     with holdout_left:
@@ -608,13 +781,13 @@ with tabs[3]:
         if validation_summary.empty:
             st.caption("No validation summary found.")
         else:
-            st.dataframe(validation_summary, width="stretch", hide_index=True)
+            st.dataframe(validation_summary, width='stretch', hide_index=True)
     with holdout_right:
         st.subheader("Holdout Summary")
         if holdout_summary.empty:
             st.caption("No holdout summary found.")
         else:
-            st.dataframe(holdout_summary, width="stretch", hide_index=True)
+            st.dataframe(holdout_summary, width='stretch', hide_index=True)
 
     if controller_metadata:
         st.subheader("Hybrid Gate")
@@ -625,7 +798,7 @@ with tabs[3]:
             else "Hybrid retained as visible technical-depth mode; legacy adaptive remains the safer default."
         )
 
-with tabs[4]:
+with tabs[5]:
     pitch_markdown = build_pitch_markdown(results, scenario, model_label=model_label)
     depth_left, depth_right = st.columns([1.0, 1.0])
 
@@ -640,16 +813,16 @@ with tabs[4]:
                 {"Layer": "Safety Shield", "Details": "Vetoes actions predicted to create high occupancy risk or unfair starvation"},
             ]
         )
-        st.dataframe(stack, width="stretch", hide_index=True)
+        st.dataframe(stack, width='stretch', hide_index=True)
 
         st.subheader("Assumptions & Data Source")
         st.markdown(build_assumptions_markdown())
 
     with depth_right:
         st.subheader("Comparison Table")
-        st.dataframe(comparison, width="stretch", hide_index=True)
+        st.dataframe(comparison, width='stretch', hide_index=True)
         st.subheader("Improvement Table")
-        st.dataframe(improvements, width="stretch", hide_index=True)
+        st.dataframe(improvements, width='stretch', hide_index=True)
 
     report_col, assumptions_col = st.columns([1.0, 1.0])
     with report_col:
@@ -659,7 +832,7 @@ with tabs[4]:
             data=pitch_markdown,
             file_name=f"quarryflow_{scenario}_report.md",
             mime="text/markdown",
-            width="stretch",
+            width='stretch',
         )
     with assumptions_col:
         st.subheader("Download Assumptions")
@@ -668,7 +841,7 @@ with tabs[4]:
             data=build_assumptions_markdown(),
             file_name="quarryflow_assumptions.md",
             mime="text/markdown",
-            width="stretch",
+            width='stretch',
         )
     st.code(
         """flowchart LR

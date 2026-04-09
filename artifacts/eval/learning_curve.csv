@@ -1,0 +1,4 @@
+iteration,stage,pass_index,validation_hybrid_reward,validation_legacy_reward,best_validation_reward
+1,stage_1_light,1,3413.415,3449.477,3413.415
+2,stage_2_peak,1,3532.969,3356.777,3532.969
+3,stage_3_chaotic,1,3472.236,3122.946,3532.969
