@@ -215,30 +215,7 @@ streamlit run app/streamlit_app.py
 | -------------- | --------------------------------- |
 | Free Flow      | All vehicles released immediately |
 | Alternating    | Left-right switching              |
-| Adaptive Burst | Larger queue priority             |# 🚦 QuarryFlow-Crossing
-
-**Adaptive Traffic Release Strategies for Railway Level Crossings**  
-A simulation and ML-driven framework to model vehicle queues at railway crossings and evaluate intelligent gate release policies.
-
-
-# ✨ Overview
-
-QuarryFlow-Crossing simulates **two-sided traffic queues** at railway level crossings and evaluates multiple **vehicle release strategies**:
-
-- Free Flow Release  
-- Alternating Release  
-- Adaptive Burst Release  
-- ML-based Policy Selection (RandomForest)
-
-The system models:
-
-- Mixed vehicle types  
-- Queue accumulation  
-- Aggressive drivers  
-- Waiting time penalties  
-- Crossing clearance efficiency  
-- Policy fairness and starvation prevention  
-
+| Adaptive Burst | Larger queue priority             |
 
 ## 🎯 Use Cases
 
