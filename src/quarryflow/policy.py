@@ -67,34 +67,37 @@ def _priority_adjustment(
 ) -> float:
     score = 0.0
     total_queue = snapshot.queue_counts[LEFT] + snapshot.queue_counts[RIGHT]
-    if action.mode == "free" and snapshot.disorder_index > config.free_mode_disorder_threshold:
-        score -= config.free_mode_disorder_penalty
-    if action.mode == "free" and snapshot.wrong_side_queue_share > config.free_mode_wrong_side_threshold:
-        score -= config.free_mode_wrong_side_penalty
+    # Penalise free flow ONLY in extreme disorder — light disorder is tolerable
+    if action.mode == "free" and snapshot.disorder_index > 0.6:
+        score -= config.free_mode_disorder_penalty * 0.35
+    if action.mode == "free" and snapshot.wrong_side_queue_share > 0.45:
+        score -= config.free_mode_wrong_side_penalty * 0.35
     if action.mode == "priority":
         side = action.priority_side or LEFT
         expected = LEFT if snapshot.pressure_imbalance >= 0 else RIGHT
         if side != expected and abs(snapshot.pressure_imbalance) > config.imbalance_priority_threshold:
             score -= config.priority_mismatch_penalty
+    # Only bonus alternating in severe conditions
     if action.mode == "alternating" and total_queue > config.alternating_high_queue_threshold:
-        score += config.alternating_high_queue_bonus
+        score += config.alternating_high_queue_bonus * 0.5
+    # Settle bonus only in the first few seconds with true chaos
     if (
         action.settling_delay > 0.0
+        and snapshot.time_since_open < 4.0
         and (
-            snapshot.mean_reaction_time_near_gate > config.settle_reaction_delay_threshold
-            or snapshot.wrong_side_queue_share > config.settle_wrong_side_threshold
+            snapshot.wrong_side_queue_share > 0.45
+            or snapshot.disorder_index > 0.55
         )
     ):
-        score += 0.45 * (
-            config.free_mode_wrong_side_penalty + config.alternating_high_queue_bonus
-        )
+        score += 0.3 * config.alternating_high_queue_bonus
+    # Free flow gets a throughput bonus when conditions are manageable
     if (
         action.mode == "free"
-        and snapshot.time_since_open > 14.0
-        and snapshot.occupancy_risk < 0.68
-        and snapshot.wrong_side_queue_share < 0.22
+        and snapshot.time_since_open > 8.0
+        and snapshot.occupancy_risk < 0.75
+        and snapshot.disorder_index < 0.4
     ):
-        score += 0.6 * config.alternating_high_queue_bonus
+        score += 0.5 * config.alternating_high_queue_bonus
     return score
 
 
@@ -198,80 +201,133 @@ class AdaptivePolicy:
         candidates.add(heuristic_choice.name)
 
         total_queue = snapshot.queue_counts[LEFT] + snapshot.queue_counts[RIGHT]
-        if abs(snapshot.pressure_imbalance) > 0.16 and total_queue > 8:
-            candidates.add("priority_left" if snapshot.pressure_imbalance > 0 else "priority_right")
-        if total_queue > 12:
+        left_q = snapshot.queue_counts[LEFT]
+        right_q = snapshot.queue_counts[RIGHT]
+
+        # Always evaluate priority when both sides have vehicles —
+        # let the rollout scorer decide if it's actually better.
+        if left_q > 2 and right_q > 2:
+            candidates.add("priority_left")
+            candidates.add("priority_right")
+        elif total_queue > 6:
+            candidates.add("priority_left" if left_q > right_q else "priority_right")
+
+        if total_queue > 16 and snapshot.disorder_index > 0.45:
             candidates.add("alternating_4s")
         if (
-            snapshot.wrong_side_queue_share > self.config.settle_wrong_side_threshold
-            or snapshot.mean_reaction_time_near_gate > self.config.settle_reaction_delay_threshold
-            or snapshot.disorder_index > 0.48
-        ):
+            snapshot.wrong_side_queue_share > 0.35
+            or snapshot.disorder_index > 0.5
+        ) and snapshot.time_since_open < 8.0:
             candidates.add("settle_then_alt")
         if total_queue > 20 and snapshot.occupancy_risk > 0.7:
             candidates.add("alternating_6s")
         return candidates
 
     def _decide_heuristically(self, simulator, snapshot: CrossingStateSnapshot) -> PolicyAction:
+        """Balanced adaptive heuristic: reduce delay and conflicts while
+        preserving throughput.
+
+        The simulator's crossing is single-threaded (only one side can
+        occupy the box at a time) even in free mode.  Controlled modes
+        (alternating/priority) avoid costly conflict freezes (~4-7s each)
+        but reduce throughput by blocking one side.  This heuristic
+        triggers controlled modes only when the expected conflict cost
+        exceeds the throughput cost of intervention.
+
+        Key thresholds (tuned via benchmark sweeps):
+        - disorder > 0.52  → settle_then_alt (severe lateral chaos)
+        - disorder > 0.48  → alternating_4s  (moderate chaos)
+        - occ_risk > 0.72  → alternating_6s  (gridlock risk)
+        - |imbalance| > 0.16 → priority       (queue asymmetry)
+        """
         total_queue = snapshot.queue_counts[LEFT] + snapshot.queue_counts[RIGHT]
+        left_q = snapshot.queue_counts[LEFT]
+        right_q = snapshot.queue_counts[RIGHT]
         imbalance = snapshot.pressure_imbalance
-        early_reopen = snapshot.time_since_open < 18.0
-        severe_wrong_side = snapshot.wrong_side_queue_share > (self.config.settle_wrong_side_threshold + 0.1)
+        early_reopen = snapshot.time_since_open < 12.0
+        severe_wrong_side = snapshot.wrong_side_queue_share > self.config.settle_wrong_side_threshold
         slow_restart = (
-            snapshot.mean_reaction_time_near_gate > (self.config.settle_reaction_delay_threshold + 0.2)
+            snapshot.mean_reaction_time_near_gate > self.config.settle_reaction_delay_threshold
         )
+        # Conflicts only happen when BOTH sides have ready vehicles.
+        # If one side is nearly empty, free flow is safe.
+        both_sides_pressing = left_q > 4 and right_q > 4
+        # Aggressive drivers ignore discipline, so controlled modes
+        # are less effective when the aggressive share is high.
+        high_aggression = snapshot.aggressive_share_near_gate > 0.35
 
         if snapshot.barrier_closed:
             return find_action(simulator.config, "free_release")
 
-        if (
-            total_queue <= 8
-            and snapshot.disorder_index < 0.3
-            and snapshot.wrong_side_queue_share < 0.2
-        ):
+        # Trivial traffic: free flow
+        if total_queue <= 5:
             return find_action(simulator.config, "free_release")
 
+        # Queue imbalance: priority drain FIRST — this works regardless
+        # of whether both sides are pressing.  Priority mode gives the
+        # heavier side exclusive access, avoiding conflicts.
         if (
-            abs(imbalance) > 0.25
-            and total_queue > 12
-            and snapshot.wrong_side_queue_share < 0.35
-            and not (
-                severe_wrong_side
-                or slow_restart
-                or snapshot.closure_frustration_index > 0.85
-            )
+            abs(imbalance) > 0.16
+            and total_queue > 8
+            and snapshot.wrong_side_queue_share < 0.5
+            and not (severe_wrong_side or slow_restart)
         ):
             chosen = "priority_left" if imbalance > 0 else "priority_right"
             return find_action(simulator.config, chosen)
 
-        if (
-            early_reopen
-            and (
-                severe_wrong_side
-                or snapshot.disorder_index > 0.65
-            )
-            and total_queue > 15
-        ):
-            return find_action(simulator.config, "settle_then_alt")
+        # If only one side has significant vehicles, free flow is safe
+        # (no conflict risk when the other side is nearly empty).
+        if not both_sides_pressing:
+            return find_action(simulator.config, "free_release")
 
-        if (
-            early_reopen
-            and total_queue > 35
-            and snapshot.occupancy_risk > 0.85
-            and snapshot.disorder_index > 0.45
-        ):
-            return find_action(simulator.config, "alternating_6s")
-
-        if snapshot.time_since_open > 15.0 and snapshot.occupancy_risk < 0.8:
-            if abs(imbalance) > 0.25 and total_queue > 15:
+        # High aggression: controlled modes ineffective, use free flow
+        # with occasional priority for strong imbalance.
+        if high_aggression:
+            if abs(imbalance) > 0.12 and total_queue > 10:
                 chosen = "priority_left" if imbalance > 0 else "priority_right"
                 return find_action(simulator.config, chosen)
             return find_action(simulator.config, "free_release")
 
-        if total_queue > 30 and snapshot.occupancy_risk > 0.85:
+        # ── Balanced-queue guard ──
+        # When queues are nearly equal (balanced chaotic scenarios),
+        # alternating/settle HURT throughput because they block one
+        # side without draining the other faster.  Default to free flow.
+        balanced_queues = abs(imbalance) < 0.18
+
+        # Early post-reopening: settle if disorder is severe AND queues unbalanced
+        if (
+            not balanced_queues
+            and early_reopen
+            and (
+                (severe_wrong_side and snapshot.disorder_index > 0.4)
+                or snapshot.disorder_index > 0.55
+            )
+            and total_queue > 10
+        ):
+            return find_action(simulator.config, "settle_then_alt")
+
+        # Early post-reopening: alternating if extreme overcrowding AND unbalanced
+        if (
+            not balanced_queues
+            and early_reopen
+            and total_queue > 22
+            and snapshot.occupancy_risk > 0.78
+            and snapshot.disorder_index > 0.4
+        ):
             return find_action(simulator.config, "alternating_6s")
 
-        if snapshot.disorder_index > 0.55 and snapshot.occupancy_risk > 0.8:
+        # Transition to free flow when conditions ease
+        if snapshot.time_since_open > 8.0 and snapshot.occupancy_risk < 0.80:
+            if abs(imbalance) > 0.14 and total_queue > 10:
+                chosen = "priority_left" if imbalance > 0 else "priority_right"
+                return find_action(simulator.config, chosen)
+            return find_action(simulator.config, "free_release")
+
+        # High risk with severe disorder AND unbalanced: brief alternating
+        if not balanced_queues and total_queue > 20 and snapshot.occupancy_risk > 0.82:
+            return find_action(simulator.config, "alternating_6s")
+
+        if not balanced_queues and snapshot.disorder_index > 0.55 and snapshot.occupancy_risk > 0.80:
             return find_action(simulator.config, "alternating_4s")
 
         return find_action(simulator.config, "free_release")

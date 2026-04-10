@@ -178,14 +178,14 @@ class HorizonOutcome:
 
 @dataclass
 class AdaptivePolicyConfig:
-    throughput_weight: float = 3.0
-    waiting_time_weight: float = 0.7
-    congestion_weight: float = 0.08
-    occupancy_risk_weight: float = 15.0
-    fairness_gap_weight: float = 8.0
-    wrong_side_weight: float = 6.0
-    idling_fuel_weight: float = 1.2
-    worst_clearance_weight: float = 0.04
+    throughput_weight: float = 0.8
+    waiting_time_weight: float = 1.0
+    congestion_weight: float = 3.0
+    occupancy_risk_weight: float = 25.0
+    fairness_gap_weight: float = 80.0
+    wrong_side_weight: float = 80.0
+    idling_fuel_weight: float = 1.5
+    worst_clearance_weight: float = 0.1
     uncertainty_penalty_weight: float = 2.5
     linucb_alpha: float = 1.25
     shield_occupancy_threshold: float = 0.88

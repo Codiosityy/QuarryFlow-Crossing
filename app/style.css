@@ -46,8 +46,14 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.stApp *:not(i):not(.material-icons):not([class*="icon"]):not(svg):not(path) {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+.stApp *:not([data-testid="collapsedControl"] *):not(.material-symbols-rounded):not(.material-icons):not([class*="icon"]):not(svg *) {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Restore Material Icons font for Streamlit internal controls */
+[data-testid="collapsedControl"],
+[data-testid="collapsedControl"] * {
+  font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
 .block-container {

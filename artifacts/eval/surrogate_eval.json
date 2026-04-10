@@ -1,30 +1,30 @@
 {
   "validation": {
-    "rows": 306,
+    "rows": 756,
     "mae": {
-      "average_waiting_time": 8.655574,
-      "throughput": 173.590245,
-      "max_congestion_length": 54.065893,
-      "occupancy_risk_horizon": 0.105298,
-      "fairness_gap_horizon": 0.117767,
-      "wrong_side_queue_share_horizon": 0.115851,
-      "idling_fuel_liters_horizon": 0.354052,
-      "mean_clearance_time_horizon": 0.41487,
-      "worst_clearance_time_horizon": 0.41487
+      "average_waiting_time": 4.356816,
+      "throughput": 164.064458,
+      "max_congestion_length": 43.365127,
+      "occupancy_risk_horizon": 0.088434,
+      "fairness_gap_horizon": 0.087552,
+      "wrong_side_queue_share_horizon": 0.114693,
+      "idling_fuel_liters_horizon": 0.2977,
+      "mean_clearance_time_horizon": 0.413264,
+      "worst_clearance_time_horizon": 0.413264
     }
   },
   "holdout": {
-    "rows": 306,
+    "rows": 756,
     "mae": {
-      "average_waiting_time": 4.190979,
-      "throughput": 143.013975,
-      "max_congestion_length": 37.499958,
-      "occupancy_risk_horizon": 0.091198,
-      "fairness_gap_horizon": 0.085012,
-      "wrong_side_queue_share_horizon": 0.112756,
-      "idling_fuel_liters_horizon": 0.311716,
-      "mean_clearance_time_horizon": 1.417848,
-      "worst_clearance_time_horizon": 1.417848
+      "average_waiting_time": 3.982122,
+      "throughput": 129.998532,
+      "max_congestion_length": 40.036317,
+      "occupancy_risk_horizon": 0.076229,
+      "fairness_gap_horizon": 0.084785,
+      "wrong_side_queue_share_horizon": 0.103467,
+      "idling_fuel_liters_horizon": 0.284874,
+      "mean_clearance_time_horizon": 0.540196,
+      "worst_clearance_time_horizon": 0.540196
     }
   }
 }
