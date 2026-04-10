@@ -216,29 +216,29 @@ class AdaptivePolicy:
         total_queue = snapshot.queue_counts[LEFT] + snapshot.queue_counts[RIGHT]
         imbalance = snapshot.pressure_imbalance
         early_reopen = snapshot.time_since_open < 18.0
-        severe_wrong_side = snapshot.wrong_side_queue_share > (self.config.settle_wrong_side_threshold + 0.1)
+        severe_wrong_side = snapshot.wrong_side_queue_share > self.config.settle_wrong_side_threshold
         slow_restart = (
-            snapshot.mean_reaction_time_near_gate > (self.config.settle_reaction_delay_threshold + 0.2)
+            snapshot.mean_reaction_time_near_gate > self.config.settle_reaction_delay_threshold
         )
 
         if snapshot.barrier_closed:
             return find_action(simulator.config, "free_release")
 
         if (
-            total_queue <= 8
-            and snapshot.disorder_index < 0.3
-            and snapshot.wrong_side_queue_share < 0.2
+            total_queue <= 4
+            and snapshot.disorder_index < 0.18
+            and snapshot.wrong_side_queue_share < 0.1
         ):
             return find_action(simulator.config, "free_release")
 
         if (
-            abs(imbalance) > 0.25
-            and total_queue > 12
-            and snapshot.wrong_side_queue_share < 0.35
+            abs(imbalance) > 0.18
+            and total_queue > 8
+            and snapshot.wrong_side_queue_share < 0.45
             and not (
                 severe_wrong_side
                 or slow_restart
-                or snapshot.closure_frustration_index > 0.85
+                or snapshot.closure_frustration_index > 0.72
             )
         ):
             chosen = "priority_left" if imbalance > 0 else "priority_right"
@@ -248,30 +248,32 @@ class AdaptivePolicy:
             early_reopen
             and (
                 severe_wrong_side
-                or snapshot.disorder_index > 0.65
+                or slow_restart
+                or snapshot.closure_frustration_index > 0.66
+                or snapshot.disorder_index > 0.48
             )
-            and total_queue > 15
+            and total_queue > 8
         ):
             return find_action(simulator.config, "settle_then_alt")
 
         if (
             early_reopen
-            and total_queue > 35
-            and snapshot.occupancy_risk > 0.85
-            and snapshot.disorder_index > 0.45
+            and total_queue > 22
+            and snapshot.occupancy_risk > 0.72
+            and snapshot.disorder_index > 0.3
         ):
             return find_action(simulator.config, "alternating_6s")
 
-        if snapshot.time_since_open > 15.0 and snapshot.occupancy_risk < 0.8:
-            if abs(imbalance) > 0.25 and total_queue > 15:
+        if snapshot.time_since_open > 15.0 and snapshot.occupancy_risk < 0.7:
+            if abs(imbalance) > 0.14 and total_queue > 10:
                 chosen = "priority_left" if imbalance > 0 else "priority_right"
                 return find_action(simulator.config, chosen)
             return find_action(simulator.config, "free_release")
 
-        if total_queue > 30 and snapshot.occupancy_risk > 0.85:
+        if total_queue > 18 and snapshot.occupancy_risk > 0.7:
             return find_action(simulator.config, "alternating_6s")
 
-        if snapshot.disorder_index > 0.55 and snapshot.occupancy_risk > 0.8:
+        if snapshot.disorder_index > 0.38 or snapshot.occupancy_risk > 0.62:
             return find_action(simulator.config, "alternating_4s")
 
         return find_action(simulator.config, "free_release")
