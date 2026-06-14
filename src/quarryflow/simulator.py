@@ -78,7 +78,25 @@ class RailwayCrossingSimulator:
         self._conflict_release_side: str | None = None
 
     def clone(self) -> "RailwayCrossingSimulator":
-        return copy.deepcopy(self)
+        # Optimization: Temporarily remove massive history arrays so deepcopy is fast
+        saved_history = self.history
+        saved_snapshots = self.snapshots
+        saved_actions = self.actions_taken
+        saved_decision_traces = getattr(self, "decision_traces", [])
+
+        self.history = []
+        self.snapshots = []
+        self.actions_taken = []
+        self.decision_traces = []
+
+        cloned = copy.deepcopy(self)
+
+        self.history = saved_history
+        self.snapshots = saved_snapshots
+        self.actions_taken = saved_actions
+        self.decision_traces = saved_decision_traces
+
+        return cloned
 
     def run_episode(self, policy=None, *, record_history: bool = False) -> SimulationResult:
         self.reset(seed=self.seed)
@@ -117,7 +135,7 @@ class RailwayCrossingSimulator:
 
         while clone.time < end_time:
             clone.step(policy, record_history=False)
-            snapshot = clone.build_snapshot()
+            snapshot = clone.last_snapshot
             queue_integral += (
                 snapshot.queue_counts[LEFT] + snapshot.queue_counts[RIGHT]
             ) * clone.config.time_step
@@ -207,6 +225,8 @@ class RailwayCrossingSimulator:
             snapshot.dilemma_zone_pressure,
         )
         self._update_clearance(snapshot)
+
+        self.last_snapshot = snapshot
 
         if record_history:
             self._record_state(snapshot=snapshot)

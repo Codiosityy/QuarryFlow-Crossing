@@ -174,34 +174,29 @@ def build_snapshot_figure(vehicles: pd.DataFrame, scenario_name: str, seed: int,
 # ═══════════════════════════════════════════════════════════════
 
 @st.cache_data(show_spinner=False, ttl=3600)
-def _run_cached_suite(scenario, seed, model_path, ensemble_path, controller_path, record_history, fast_mode):
+def _run_cached_suite(scenario, seed, model_path, record_history, fast_mode):
     return run_policy_suite(
         scenario, seed=seed,
-        model_path=model_path, ensemble_path=ensemble_path,
-        controller_path=controller_path,
+        model_path=model_path,
         record_history=record_history, fast_mode=fast_mode,
     )
 
 
-def load_run(scenario, seed, model_path, ensemble_path, controller_path, *, record_history=True, fast_mode=False):
+def load_run(scenario, seed, model_path, *, record_history=True, fast_mode=False):
     model_path_arg = model_path if model_path and Path(model_path).exists() else None
-    ensemble_path_arg = ensemble_path if ensemble_path and Path(ensemble_path).exists() else None
-    controller_path_arg = controller_path if controller_path and Path(controller_path).exists() else None
 
     if fast_mode:
         with st.spinner("⚡ Loading preview..."):
             results = _run_cached_suite(
                 scenario, seed=seed,
-                model_path=model_path_arg, ensemble_path=ensemble_path_arg,
-                controller_path=controller_path_arg,
+                model_path=model_path_arg,
                 record_history=record_history, fast_mode=True,
             )
     else:
-        progress_bar = st.progress(0, text="🔬 Running full ML simulation...")
+        progress_bar = st.progress(0, text="🔬 Running Hybrid MCTS Simulation...")
         results = run_policy_suite(
             scenario, seed=seed,
-            model_path=model_path_arg, ensemble_path=ensemble_path_arg,
-            controller_path=controller_path_arg,
+            model_path=model_path_arg,
             record_history=record_history, fast_mode=False,
             progress_callback=lambda p, m: progress_bar.progress(min(p, 1.0), text=f"🔬 {m}"),
         )
@@ -212,18 +207,7 @@ def load_run(scenario, seed, model_path, ensemble_path, controller_path, *, reco
     st.session_state["quarryflow_scenario"] = scenario
     st.session_state["quarryflow_seed"] = seed
     st.session_state["quarryflow_fast_mode"] = fast_mode
-    if not fast_mode and ensemble_path_arg:
-        from quarryflow.model import BootstrapSurrogateEnsemble
-        st.session_state["quarryflow_model_label"] = BootstrapSurrogateEnsemble.load(ensemble_path_arg).backend
-    elif not fast_mode and model_path_arg:
-        st.session_state["quarryflow_model_label"] = SurrogateModel.load(model_path_arg).backend
-    else:
-        st.session_state["quarryflow_model_label"] = "heuristic-only adaptive"
-    if not fast_mode and controller_path_arg:
-        _, _, metadata = load_hybrid_controller(controller_path_arg)
-        st.session_state["quarryflow_controller_metadata"] = metadata
-    else:
-        st.session_state["quarryflow_controller_metadata"] = {}
+    st.session_state["quarryflow_model_label"] = "MCTS Agent"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -264,41 +248,36 @@ with st.sidebar:
     seed = st.number_input("Random Seed", min_value=1, max_value=999, value=11, step=1)
 
     st.markdown("---")
-    st.markdown("### 📁 Model Paths")
-    ensemble_path = st.text_input("Ensemble", value=str(ROOT / "artifacts" / "models" / "surrogate_ensemble.pkl"))
-    controller_path = st.text_input("Controller", value=str(ROOT / "artifacts" / "models" / "hybrid_controller.json"))
-    model_path = st.text_input("Legacy", value=str(ROOT / "artifacts" / "models" / "surrogate.pkl"))
+    st.markdown("### 📁 ML Prior Models")
+    model_path = st.text_input("Legacy Model", value=str(ROOT / "artifacts" / "models" / "surrogate.pkl"))
 
     st.markdown("---")
-    run_button = st.button("🚀 Run Full ML Simulation", type="primary", width='stretch')
-    st.caption("Initial load uses fast heuristic preview. Full mode runs all 4 policies with ML-powered counterfactual rollouts.")
+    run_button = st.button("🚀 Run Full Hybrid Simulation", type="primary", width='stretch')
+    st.caption("Initial load uses fast heuristic preview. Full mode runs ML-Guided MCTS Rollout agent.")
 
 # ── Load Data ─────────────────────────────────────────────────
 if run_button:
     _run_cached_suite.clear()
-    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True, fast_mode=False)
+    load_run(scenario, int(seed), model_path, record_history=True, fast_mode=False)
 elif "quarryflow_results" not in st.session_state:
-    load_run(scenario, int(seed), model_path, ensemble_path, controller_path, record_history=True, fast_mode=True)
+    load_run(scenario, int(seed), model_path, record_history=True, fast_mode=True)
 
 results = st.session_state["quarryflow_results"]
 summary = st.session_state["quarryflow_summary"]
 scenario = st.session_state["quarryflow_scenario"]
 seed = st.session_state["quarryflow_seed"]
 model_label = st.session_state.get("quarryflow_model_label", "heuristic-only")
-controller_metadata = st.session_state.get("quarryflow_controller_metadata", {})
+
 is_fast_mode = st.session_state.get("quarryflow_fast_mode", False)
 config = build_scenario(scenario, seed=seed)
-learning_curve = read_optional_frame(ROOT / "artifacts" / "eval" / "learning_curve.csv")
-holdout_summary = read_optional_frame(ROOT / "artifacts" / "eval" / "holdout_summary.csv")
-validation_summary = read_optional_frame(ROOT / "artifacts" / "eval" / "validation_summary.csv")
-primary_policy = "Hybrid Adaptive" if "Hybrid Adaptive" in results else "Legacy Adaptive"
+primary_policy = "MCTS Rollout"
 comp = comparison_frame(results)
 impr = improvement_frame(results)
 
 # ── Mode indicator ────────────────────────────────────────────
 mode_label = "preview" if is_fast_mode else "live"
 mode_class = "preview" if is_fast_mode else "live"
-mode_text = "Fast Preview" if is_fast_mode else "Full ML Mode"
+mode_text = "Fast Preview" if is_fast_mode else "Full MCTS Mode"
 st.markdown(f'<span class="status-badge {mode_class}">{mode_text}</span>', unsafe_allow_html=True)
 
 # ── About Section ─────────────────────────────────────────────
@@ -333,11 +312,11 @@ st.markdown("""
   </div>
   <div class="feature-grid">
     <div class="feature-item"><span class="feature-icon">⚙️</span> Event-driven microsimulation</div>
-    <div class="feature-item"><span class="feature-icon">🧠</span> Bootstrap ML surrogate</div>
-    <div class="feature-item"><span class="feature-icon">🛡️</span> Safety shield veto layer</div>
-    <div class="feature-item"><span class="feature-icon">📊</span> Counterfactual policy scoring</div>
+    <div class="feature-item"><span class="feature-icon">🧠</span> Monte Carlo Tree Search</div>
+    <div class="feature-item"><span class="feature-icon">🛡️</span> Transposition Table Caching</div>
+    <div class="feature-item"><span class="feature-icon">📊</span> Multi-Objective Rollout Scoring</div>
     <div class="feature-item"><span class="feature-icon">🚗</span> Car · Bike · Auto-rickshaw</div>
-    <div class="feature-item"><span class="feature-icon">🔄</span> Curriculum-trained controller</div>
+    <div class="feature-item"><span class="feature-icon">🔄</span> Heuristic Candidate Pruning</div>
   </div>
   <div class="tech-tags">
     <span class="tech-tag">Python</span>
@@ -581,29 +560,20 @@ with tabs[3]:
 
 # ── Tab 4: Learning ───────────────────────────────────────────
 with tabs[4]:
-    st.subheader("Curriculum Learning Curve")
-    if learning_curve.empty:
-        st.caption("Run `python scripts/train_hybrid_controller.py --profile fast` to generate learning artifacts.")
+    st.subheader("MCTS State Evaluation Cache")
+    st.caption("MCTS caches evaluations using a Transposition Table to speed up subsequent rollouts.")
+    if not is_fast_mode and "MCTS Rollout" in results:
+        pol_obj = getattr(results["MCTS Rollout"], "policy_obj", None)
+        if pol_obj and hasattr(pol_obj, "ttable"):
+            st.metric("Cached States", len(pol_obj.ttable))
+            df = pd.DataFrame(
+                [{"State Hash": k, "Score": v} for k, v in list(pol_obj.ttable.items())[:100]]
+            )
+            st.dataframe(df, width='stretch', hide_index=True)
+        else:
+            st.info("Cache metrics are not available after reloading from cache. Run Full Simulation again.")
     else:
-        cfig = px.line(learning_curve, x="iteration",
-                       y=["validation_hybrid_reward", "validation_legacy_reward", "best_validation_reward"],
-                       markers=True, title="Validation Reward Across Curriculum Stages")
-        st.plotly_chart(cfig, width='stretch')
-        st.dataframe(learning_curve, width='stretch', hide_index=True)
-
-    h1, h2 = st.columns(2)
-    with h1:
-        st.subheader("Validation Summary")
-        if validation_summary.empty: st.caption("Not available.")
-        else: st.dataframe(validation_summary, width='stretch', hide_index=True)
-    with h2:
-        st.subheader("Holdout Summary")
-        if holdout_summary.empty: st.caption("Not available.")
-        else: st.dataframe(holdout_summary, width='stretch', hide_index=True)
-
-    if controller_metadata:
-        st.subheader("Hybrid Gate Metrics")
-        st.json(controller_metadata.get("gate_metrics", {}))
+        st.info("Run Full Hybrid Simulation to view cache metrics.")
 
 # ── Tab 5: Technical ──────────────────────────────────────────
 with tabs[5]:

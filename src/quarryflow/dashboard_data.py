@@ -6,9 +6,9 @@ from pathlib import Path
 import pandas as pd
 
 from .metrics import compare_results, improvement_summary
-from .hybrid import load_hybrid_controller
-from .model import BootstrapSurrogateEnsemble, SurrogateModel
-from .policy import AdaptivePolicy, FreeFlowPolicy, HybridAdaptivePolicy, StaticAlternatingPolicy
+
+from .model import SurrogateModel
+from .policy import AdaptivePolicy, FreeFlowPolicy, StaticAlternatingPolicy
 from .reporting import summarize_results
 from .scenarios import build_scenario
 from .simulator import RailwayCrossingSimulator
@@ -39,8 +39,6 @@ def run_policy_suite(
     *,
     seed: int = 7,
     model_path: str | None = None,
-    ensemble_path: str | None = None,
-    controller_path: str | None = None,
     record_history: bool = True,
     record_every: int = 2,
     fast_mode: bool = False,
@@ -54,18 +52,7 @@ def run_policy_suite(
         candidate = Path(model_path)
         if candidate.exists():
             legacy_model = SurrogateModel.load(candidate)
-    ensemble = None
-    controller_config = None
-    bandit = None
-    controller_metadata = {}
-    if ensemble_path:
-        ensemble_candidate = Path(ensemble_path)
-        if ensemble_candidate.exists():
-            ensemble = BootstrapSurrogateEnsemble.load(ensemble_candidate)
-    if controller_path:
-        controller_candidate = Path(controller_path)
-        if controller_candidate.exists():
-            controller_config, bandit, controller_metadata = load_hybrid_controller(controller_candidate)
+
 
     policies = {
         "Free Flow": FreeFlowPolicy(),
@@ -73,18 +60,11 @@ def run_policy_suite(
     }
 
     if fast_mode:
-        # Heuristic-only adaptive for fast initial loads (no rollout overhead)
-        policies["Legacy Adaptive"] = AdaptivePolicy(model=None)
+        # Heuristic-only adaptive for fast initial loads
+        policies["MCTS Rollout"] = AdaptivePolicy(model=None)
     else:
-        policies["Legacy Adaptive"] = AdaptivePolicy(model=legacy_model or ensemble)
-        policies["MCTS Rollout"] = MCTSRolloutPolicy()
-
-    if not fast_mode and ensemble is not None and bandit is not None and controller_config is not None:
-        policies["Hybrid Adaptive"] = HybridAdaptivePolicy(
-            model=ensemble,
-            bandit=bandit,
-            config=controller_config,
-        )
+        # MCTS Rollout replaces the old Machine Learning model, using it as a heuristic!
+        policies["MCTS Rollout"] = MCTSRolloutPolicy(model=legacy_model)
 
     results = {}
     total_policies = len(policies)
@@ -104,6 +84,8 @@ def run_policy_suite(
             results[label] = simulator._build_result()
         else:
             results[label] = simulator.run_episode(policy, record_history=record_history)
+        
+        results[label].policy_obj = policy
     if progress_callback:
         progress_callback(1.0, "Done")
     return results

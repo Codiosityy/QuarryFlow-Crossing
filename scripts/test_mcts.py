@@ -17,8 +17,8 @@ def main():
     print("Policies executed:", list(results.keys()))
     if "MCTS Rollout" in results:
         mcts_res = results["MCTS Rollout"]
-        print("MCTS Wait Time:", mcts_res.metrics["average_waiting_time"])
-        print("MCTS Throughput:", mcts_res.metrics["throughput"])
+        print("MCTS Wait Time:", mcts_res.metrics.average_waiting_time)
+        print("MCTS Throughput:", mcts_res.metrics.throughput)
         print("MCTS successfully evaluated!")
     else:
         print("MCTS NOT FOUND IN RESULTS!")
