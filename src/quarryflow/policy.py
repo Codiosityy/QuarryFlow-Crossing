@@ -157,7 +157,7 @@ class AdaptivePolicy:
     def _decide_with_rollout(self, simulator, snapshot: CrossingStateSnapshot) -> PolicyAction:
         candidate_names = self._rollout_candidates(simulator, snapshot)
         best_score = float("-inf")
-        best_action = find_action(simulator.config, next(iter(candidate_names)))
+        best_action = find_action(simulator.config, sorted(candidate_names)[0])
         scored_actions: list[dict[str, Any]] = []
 
         for action_name in candidate_names:
@@ -234,11 +234,17 @@ class AdaptivePolicy:
         triggers controlled modes only when the expected conflict cost
         exceeds the throughput cost of intervention.
 
-        Key thresholds (tuned via benchmark sweeps):
-        - disorder > 0.52  → settle_then_alt (severe lateral chaos)
-        - disorder > 0.48  → alternating_4s  (moderate chaos)
-        - occ_risk > 0.72  → alternating_6s  (gridlock risk)
-        - |imbalance| > 0.16 → priority       (queue asymmetry)
+        Decision logic (in priority order):
+        - trivial traffic (queue ≤ 5) → free_release
+        - queue imbalance (|imbalance| > 0.16, both sides not pressing) → priority
+        - only one side pressing → free_release (no conflict risk)
+        - high aggression → free_release with priority fallback for imbalance
+        - balanced queues (|imbalance| < 0.18) → free_release (alternating hurts)
+        - early reopen + severe wrong side + disorder → settle_then_alt
+        - early reopen + extreme overcrowding → alternating_6s
+        - transition to free when conditions ease (time > 8s, risk < 0.80)
+        - high risk + severe disorder + unbalanced → alternating_6s or 4s
+        - default → free_release
         """
         total_queue = snapshot.queue_counts[LEFT] + snapshot.queue_counts[RIGHT]
         left_q = snapshot.queue_counts[LEFT]
