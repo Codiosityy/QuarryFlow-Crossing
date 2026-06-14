@@ -1,0 +1,47 @@
+{
+  "format_version": "1.0",
+  "scenarios": {
+    "chaotic_aggressive": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ],
+    "chaotic": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ],
+    "chaotic_long_gate": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ],
+    "light": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ],
+    "peak": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ],
+    "peak_left_skew": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ],
+    "peak_right_skew": [
+      "free_flow",
+      "legacy_ml_agent",
+      "mcts_rollout",
+      "static_alternating"
+    ]
+  }
+}

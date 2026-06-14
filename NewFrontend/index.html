@@ -1,0 +1,2774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuarryFlow Crossing — Simulation Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Albert Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: #0c0f0d;
+  color: #c8d4cc;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 44px;
+  background: #0f1210;
+  border-bottom: 1px solid rgba(201,168,76,0.12);
+  flex-shrink: 0;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.25), transparent);
+}
+.header h1 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e8e0d0;
+  letter-spacing: 0.04em;
+}
+.header h1 .accent { color: #c9a84c; font-weight: 700; }
+.header h1 .dim { color: #7a8a7e; font-weight: 400; }
+.header-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── Canvas Area ──────────────────────────────────────────── */
+.canvas-area {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+  background: #080b09;
+}
+.canvas-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-right: 1px solid rgba(201,168,76,0.06);
+}
+.canvas-panel:last-child { border-right: none; }
+.canvas-panel .policy-label {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(12,15,13,0.92);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 3px;
+  padding: 3px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #c9a84c;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+}
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── HUD ──────────────────────────────────────────────────── */
+.hud {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  pointer-events: none;
+  z-index: 10;
+}
+.hud-primary {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: rgba(12,15,13,0.92);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 3px;
+  padding: 5px 12px;
+  margin-bottom: 3px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.hud-primary .time {
+  color: #c9a84c;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 13px;
+}
+.hud-primary .barrier-open { color: #55c98a; }
+.hud-primary .barrier-closed { color: #d45555; }
+.hud-secondary {
+  display: flex;
+  gap: 16px;
+  background: rgba(12,15,13,0.78);
+  border: 1px solid rgba(201,168,76,0.06);
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 10px;
+  color: #6a8a72;
+  letter-spacing: 0.02em;
+}
+.hud-secondary .metric-val { color: #b8d4c0; font-weight: 600; }
+.hud-secondary .risk-high { color: #d45555; }
+.hud-sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(201,168,76,0.15);
+  flex-shrink: 0;
+}
+.disorder-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  min-width: 100px;
+}
+.disorder-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(255,140,60,0.15), rgba(255,64,64,0.25));
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+.disorder-text {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a0b0a4;
+  white-space: nowrap;
+}
+.disorder-text.high { color: #ff8c3c; }
+.disorder-text.critical { color: #ff4040; }
+
+/* ── Controls Bar ─────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: #0f1210;
+  border-top: 1px solid rgba(201,168,76,0.12);
+  flex-shrink: 0;
+  position: relative;
+}
+.controls::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.2), transparent);
+}
+.controls button {
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.15);
+  color: #a0b0a4;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.controls button:hover {
+  background: rgba(201,168,76,0.12);
+  color: #d4c8a0;
+  border-color: rgba(201,168,76,0.25);
+}
+.controls button.active {
+  background: rgba(201,168,76,0.18);
+  border-color: #c9a84c;
+  color: #e8dcc0;
+}
+.controls button:disabled { opacity: 0.25; cursor: default; }
+
+.speed-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.speed-slider-group input[type="range"] {
+  width: 72px;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(201,168,76,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.speed-slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #c9a84c;
+  border: 2px solid #0c0f0d;
+  cursor: pointer;
+}
+.speed-slider-group input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #c9a84c;
+  border: 2px solid #0c0f0d;
+  cursor: pointer;
+}
+.speed-label {
+  font-size: 10px;
+  color: #c9a84c;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+.scrubber-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scrubber {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(201,168,76,0.1);
+  border-radius: 2px;
+  outline: none;
+}
+.scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #c9a84c;
+  cursor: pointer;
+  border: 2px solid #0c0f0d;
+}
+.scrubber::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #c9a84c;
+  cursor: pointer;
+  border: 2px solid #0c0f0d;
+}
+.time-display {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #6a8a72;
+  min-width: 85px;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+/* ── Selectors ────────────────────────────────────────────── */
+select {
+  background: rgba(201,168,76,0.05);
+  border: 1px solid rgba(201,168,76,0.15);
+  color: #a0b0a4;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+select:hover { border-color: rgba(201,168,76,0.25); }
+select option { background: #0f1210; color: #a0b0a4; }
+
+/* ── Legend ────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 10px;
+  color: #6a8a72;
+  letter-spacing: 0.04em;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-swatch {
+  width: 20px;
+  height: 10px;
+  border-radius: 2px;
+  position: relative;
+}
+.legend-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(201,168,76,0.15);
+  margin: 0 2px;
+}
+
+/* ── Debug Toggle ─────────────────────────────────────────── */
+.debug-toggle {
+  font-size: 10px;
+  color: #6a8a72;
+  cursor: pointer;
+  user-select: none;
+  letter-spacing: 0.04em;
+}
+.debug-toggle:hover { color: #a0b0a4; }
+
+/* ── Empty State ──────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 14px;
+  text-align: center;
+  padding: 40px;
+}
+.empty-state .empty-icon {
+  width: 56px; height: 56px;
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #c9a84c;
+  background: rgba(201,168,76,0.04);
+  margin-bottom: 4px;
+}
+.empty-state h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #a0b0a4;
+  letter-spacing: 0.02em;
+}
+.empty-state p {
+  font-size: 12px;
+  color: #5a7a62;
+  max-width: 380px;
+  line-height: 1.7;
+}
+.empty-state code {
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #c9a84c;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+/* ── File Input ───────────────────────────────────────────── */
+.file-input-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(201,168,76,0.06);
+  border: 1px solid rgba(201,168,76,0.15);
+  color: #a0b0a4;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.file-input-label:hover {
+  background: rgba(201,168,76,0.12);
+  border-color: rgba(201,168,76,0.25);
+}
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.slider-label {
+  font-size: 9px;
+  color: #5a7a62;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  min-width: 36px;
+}
+.slider-group input[type="range"] {
+  width: 52px;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(201,168,76,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #c9a84c;
+  border: 1.5px solid #0c0f0d;
+  cursor: pointer;
+}
+.slider-group input[type="range"]::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #c9a84c;
+  border: 1.5px solid #0c0f0d;
+  cursor: pointer;
+}
+.slider-value {
+  font-size: 9px;
+  color: #c9a84c;
+  font-weight: 600;
+  min-width: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Comparison Badge ─────────────────────────────────────── */
+.comparison-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(12,15,13,0.92);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #c9a84c;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <h1><span class="accent">QF</span> QuarryFlow Crossing <span class="dim">| Simulation Visualizer</span></h1>
+    <div class="header-controls">
+      <div class="legend">
+        <div class="legend-item">
+          <svg class="legend-swatch" viewBox="0 0 22 10">
+            <rect x="1" y="2" width="20" height="6" rx="2" fill="#55c98a"/>
+            <rect x="4" y="3" width="5" height="3" rx="1" fill="#3a8a5c" opacity="0.6"/>
+            <circle cx="5" cy="2" r="1" fill="#f0e8c0" opacity="0.8"/>
+            <circle cx="17" cy="2" r="0.8" fill="#d44040" opacity="0.8"/>
+          </svg>
+          Car
+        </div>
+        <div class="legend-item">
+          <svg class="legend-swatch" viewBox="0 0 22 10">
+            <ellipse cx="11" cy="5" rx="5" ry="3" fill="#4db8d4"/>
+            <circle cx="6" cy="5" r="1.5" fill="#1a5a6a" opacity="0.6"/>
+            <circle cx="16" cy="5" r="1.5" fill="#1a5a6a" opacity="0.6"/>
+            <ellipse cx="9" cy="4" rx="2" ry="1.5" fill="#151f1a"/>
+          </svg>
+          Bike
+        </div>
+        <div class="legend-item">
+          <svg class="legend-swatch" viewBox="0 0 22 10">
+            <rect x="1" y="2" width="12" height="6" rx="1.5" fill="#7a6020"/>
+            <rect x="11" y="3" width="10" height="4" rx="1.5" fill="#c9a84c"/>
+            <circle cx="20" cy="3" r="1" fill="#f0e8c0" opacity="0.8"/>
+          </svg>
+          Auto
+        </div>
+        <div class="legend-sep"></div>
+        <div class="legend-item">
+          <svg class="legend-swatch" viewBox="0 0 10 10">
+            <circle cx="5" cy="5" r="4" fill="none" stroke="#ff8c3c" stroke-width="1.5" opacity="0.7"/>
+            <circle cx="5" cy="5" r="1.5" fill="#ff8c3c" opacity="0.5"/>
+          </svg>
+          Overtaking
+        </div>
+        <div class="legend-item">
+          <svg class="legend-swatch" viewBox="0 0 10 10">
+            <rect x="1" y="1" width="8" height="8" rx="1" fill="none" stroke="#ff4040" stroke-width="1.5" opacity="0.7"/>
+          </svg>
+          Wrong Side
+        </div>
+      </div>
+      <label class="debug-toggle"><input type="checkbox" id="debugToggle"> Debug</label>
+    </div>
+  </div>
+
+  <!-- Canvas Area -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">&#9673;</div>
+      <h2>No simulation data loaded</h2>
+      <p>Use <strong>Load Files</strong> below to open exported JSON files, or drag them onto this area.</p>
+      <p><code>python scripts/export_viz.py --scenario peak --fast</code></p>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button id="btnPlay" title="Play/Pause (Space)">&#9654;</button>
+    <div class="speed-slider-group">
+      <input type="range" id="speedSlider" min="0" max="7" value="5" step="1" title="Playback speed">
+      <span class="speed-label" id="speedLabel">1x</span>
+    </div>
+    <button id="btnStepBack" title="Step Back (Left Arrow)">&#9664;</button>
+    <button id="btnStepFwd" title="Step Forward (Right Arrow)">&#9654;</button>
+    <div class="scrubber-wrap">
+      <input type="range" class="scrubber" id="scrubber" min="0" max="100" value="0" step="1">
+      <div class="time-display" id="timeDisplay">0.0s / 0.0s</div>
+    </div>
+    <select id="scenarioSelect">
+      <option value="">Select scenario...</option>
+    </select>
+    <select id="policySelect">
+      <option value="">Select policy...</option>
+    </select>
+    <select id="policySelect2" style="display:none">
+      <option value="">Compare with...</option>
+    </select>
+    <button id="btnCompare" title="Toggle comparison mode">Compare</button>
+    <label class="file-input-label" title="Load one or more JSON files">
+      Load Files
+      <input type="file" id="fileInput" accept=".json" multiple style="display:none">
+    </label>
+    <div class="slider-group">
+      <label class="slider-label">Road</label>
+      <input type="range" id="roadSizeSlider" min="5" max="20" value="10" step="1" title="Road width (visual only)">
+      <span class="slider-value" id="roadSizeLabel">1.0x</span>
+    </div>
+    <div class="slider-group">
+      <label class="slider-label">Vehicles</label>
+      <input type="range" id="vehicleSizeSlider" min="5" max="20" value="10" step="1" title="Vehicle size (visual only)">
+      <span class="slider-value" id="vehicleSizeLabel">1.0x</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  Constants
+// ================================================================
+const COLORS = {
+  bg: '#080b09',
+  road: '#121815',
+  roadEdge: 'rgba(201,168,76,0.08)',
+  laneDash: 'rgba(201,168,76,0.07)',
+  laneDashYellow: 'rgba(201,168,76,0.18)',
+  crossingBox: 'rgba(201,168,76,0.04)',
+  crossingBorder: 'rgba(201,168,76,0.2)',
+  crossingHatch: 'rgba(201,168,76,0.06)',
+  disorderZone: 'rgba(212,85,85,0.025)',
+  disorderBorder: 'rgba(212,85,85,0.08)',
+  barrierOpen: '#55c98a',
+  barrierClosed: '#d45555',
+  barrierWarning: '#c9a84c',
+  vehicle: { car: '#55c98a', bike: '#3dd8f0', auto: '#e8b830' },
+  vehicleDark: { car: '#2a6a42', bike: '#1880a0', auto: '#a07810' },
+  vehicleLight: { car: '#7aeab0', bike: '#80e8ff', auto: '#f0d860' },
+  vehicleStroke: '#0a0e0c',
+  headlight: '#f0e8c0',
+  taillight: '#d44040',
+  decisionFlash: 'rgba(201,168,76,0.2)',
+  shadow: 'rgba(0,0,0,0.35)',
+  rail: '#8a8a8a',
+  railHighlight: '#b0b0b0',
+  railShadow: '#555555',
+  ballast: '#3a3530',
+  ballastLight: '#4a4540',
+  trainBody: '#1a3050',
+  trainBodyLight: '#254060',
+  trainBodyDark: '#0e1e30',
+  trainRoof: '#0c1825',
+  trainStripe: '#e8b830',
+  trainWindow: '#4a8ab0',
+};
+
+const VEHICLE_SIZES = {
+  car:  { w: 10, h: 4 },
+  bike: { w: 8,  h: 3.5 },
+  auto: { w: 9,  h: 4 },
+};
+
+const GEOMETRY = {
+  approachLength: 100.0,
+  crossingBoxLength: 12.0,     // matches simulation (crossing_box_length=12.0)
+  disorderZoneLength: 15.0,
+  recoveryLength: 80.0,
+  roadHalfWidth: 4.2,     // half-width of road surface
+  laneWidth: 2.0,         // width of each lane
+  get halfBox() { return this.crossingBoxLength / 2; },
+  get totalLength() { return this.approachLength + this.crossingBoxLength + this.recoveryLength; },
+  get canvasXMin() { return -(this.approachLength + this.crossingBoxLength / 2 + this.recoveryLength - 20); },
+  get canvasXMax() { return this.approachLength + this.crossingBoxLength / 2 + this.recoveryLength - 20; },
+  canvasYMin: -10.0,
+  canvasYMax: 10.0,
+};
+
+// ================================================================
+//  State
+// ================================================================
+const state = {
+  data: null,
+  data2: null,
+  frameIndex: 0,
+  fractionalFrame: 0,
+  playing: false,
+  speed: 1,
+  showDebug: false,
+  compareMode: false,
+  scenarios: {},
+  decisionFlashTime: -10,
+  lastAction: null,
+  conflictFlashTime: -10,
+  roadScale: 1.0,       // visual road width multiplier
+  vehicleScale: 1.0,    // visual vehicle size multiplier
+  // Train state (visual overlay, not simulation data)
+  // Dynamically generates freight cars so the train fills the entire barrier closure.
+  // Cars feed from a fixed entry point just off-screen. The last car clears the
+  // crossing a few moments before the barrier opens.
+  train: {
+    active: false,        // is train currently visible
+    y: 0,                 // train front position along tracks (world coords, Y axis)
+    direction: 1,         // 1 = south-to-north (+Y), -1 = north-to-south (-Y)
+    speed: 20,            // world units/sec — balanced for smooth freight flow
+    carLength: 8,         // length of each freight car
+    engineLength: 12,     // length of locomotive
+    numCars: 1,           // starts with engine only, grows dynamically
+    get totalLength() { return this.engineLength + (this.numCars - 1) * this.carLength; },
+    genTimer: 0,          // counts UP toward genInterval, then adds a car
+    genInterval: 0.4,     // seconds between car generation (= carLength / speed)
+    entryY: -25,          // fixed Y where new cars emerge (just off-screen south)
+    elapsedTime: 0,       // seconds since train started moving
+    stopGenTime: 12,      // when to stop generating cars (calculated at spawn)
+    generationDone: false, // true once stopGenTime is reached
+  },
+  lastRenderTime: 0,      // for dt calculation in train update
+  // Collision effects
+  collisions: [],          // active crash effects: [{x, y, time, word, id}]
+
+  barrierViolations: 0,   // counter for barrier violations this session
+};
+
+// ================================================================
+//  DOM Elements
+// ================================================================
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const canvasArea = $('#canvasArea');
+const emptyState = $('#emptyState');
+const btnPlay = $('#btnPlay');
+const scrubber = $('#scrubber');
+const timeDisplay = $('#timeDisplay');
+const scenarioSelect = $('#scenarioSelect');
+const policySelect = $('#policySelect');
+const policySelect2 = $('#policySelect2');
+const btnCompare = $('#btnCompare');
+const debugToggle = $('#debugToggle');
+const speedSlider = $('#speedSlider');
+const speedLabel = $('#speedLabel');
+const roadSizeSlider = $('#roadSizeSlider');
+const roadSizeLabel = $('#roadSizeLabel');
+const vehicleSizeSlider = $('#vehicleSizeSlider');
+const vehicleSizeLabel = $('#vehicleSizeLabel');
+
+let canvases = [];
+let animFrame = null;
+let lastTick = 0;
+
+// ================================================================
+//  Canvas Setup
+// ================================================================
+function createCanvasPanels(count) {
+  canvases = [];
+  canvasArea.innerHTML = '';
+  emptyState.style.display = 'none';
+
+  for (let i = 0; i < count; i++) {
+    const panel = document.createElement('div');
+    panel.className = 'canvas-panel';
+
+    const label = document.createElement('div');
+    label.className = 'policy-label';
+    label.textContent = '\u2014';
+    panel.appendChild(label);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'canvas-wrap';
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    panel.appendChild(wrap);
+
+    const hud = document.createElement('div');
+    hud.className = 'hud';
+    hud.innerHTML = `
+      <div class="hud-primary">
+        <span class="time">0.0s</span>
+        <span class="barrier-open">\u25cf Barrier Open</span>
+        <span class="hud-sep"></span>
+        <span class="disorder-indicator" data-hud="disorderBar">
+          <span class="disorder-fill" style="width:0%"></span>
+          <span class="disorder-text">Disorder: 0.00</span>
+        </span>
+      </div>
+      <div class="hud-secondary">
+        <span>L Queue: <span class="metric-val" data-hud="queueLeft">0</span></span>
+        <span>R Queue: <span class="metric-val" data-hud="queueRight">0</span></span>
+        <span>Wrong Side: <span class="metric-val" data-hud="wrongSide">0.00</span></span>
+        <span>Risk: <span class="metric-val" data-hud="risk">0.00</span></span>
+        <span data-hud="debug" style="display:none">Vehicles: <span class="metric-val" data-hud="debugInfo">\u2014</span></span>
+      </div>
+    `;
+    panel.appendChild(hud);
+    canvasArea.appendChild(panel);
+
+    const ctx = canvas.getContext('2d');
+    canvases.push({ canvas, ctx, panel, label });
+  }
+
+  resizeCanvases();
+}
+
+function resizeCanvases() {
+  for (const c of canvases) {
+    const wrap = c.canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    c.canvas.width = w * dpr;
+    c.canvas.height = h * dpr;
+    c.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.w = w;
+    c.h = h;
+  }
+}
+
+window.addEventListener('resize', () => {
+  resizeCanvases();
+  render();
+});
+
+// ================================================================
+//  Coordinate Mapping
+// ================================================================
+function mapX(progress, side) {
+  const offset = progress - GEOMETRY.approachLength - GEOMETRY.halfBox;
+  return side === 'left' ? offset : -offset;
+}
+
+function mapY(lateralOffset, side) {
+  // Lane centers scale with road width so vehicles stay centered when road resizes
+  const laneCenter = 1.6 * state.roadScale;
+  return (side === 'left' ? laneCenter : -laneCenter) + lateralOffset;
+}
+
+function worldToCanvas(wx, wy, cw, ch) {
+  const xRange = GEOMETRY.canvasXMax - GEOMETRY.canvasXMin;
+  const yRange = GEOMETRY.canvasYMax - GEOMETRY.canvasYMin;
+  const scale = Math.min(cw / xRange, ch / yRange) * 0.92;
+  const cx = cw / 2;
+  const cy = ch / 2;
+  const midX = (GEOMETRY.canvasXMax + GEOMETRY.canvasXMin) / 2;
+  const midY = (GEOMETRY.canvasYMax + GEOMETRY.canvasYMin) / 2;
+  return {
+    x: cx + (wx - midX) * scale,
+    y: cy - (wy - midY) * scale,
+    s: scale,
+  };
+}
+
+// ================================================================
+//  Texture Generation
+// ================================================================
+let _asphaltPattern = null;
+let _ballastPattern = null;
+
+function createAsphaltTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const cx = c.getContext('2d');
+  cx.fillStyle = '#151c18';
+  cx.fillRect(0, 0, 128, 128);
+  // Grain noise
+  const imgData = cx.getImageData(0, 0, 128, 128);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 14;
+    d[i] = Math.max(0, Math.min(255, d[i] + n));
+    d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
+    d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
+  }
+  cx.putImageData(imgData, 0, 0);
+  // Subtle cracks
+  cx.strokeStyle = 'rgba(0,0,0,0.12)';
+  cx.lineWidth = 0.5;
+  for (let i = 0; i < 6; i++) {
+    cx.beginPath();
+    let x = Math.random() * 128, y = Math.random() * 128;
+    cx.moveTo(x, y);
+    for (let j = 0; j < 4; j++) {
+      x += (Math.random() - 0.5) * 40;
+      y += (Math.random() - 0.5) * 40;
+      cx.lineTo(x, y);
+    }
+    cx.stroke();
+  }
+  return cx.createPattern(c, 'repeat');
+}
+
+function createBallastTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const cx = c.getContext('2d');
+  cx.fillStyle = COLORS.ballast;
+  cx.fillRect(0, 0, 64, 64);
+  // Gravel stones
+  for (let i = 0; i < 80; i++) {
+    const x = Math.random() * 64;
+    const y = Math.random() * 64;
+    const r = 1 + Math.random() * 2.5;
+    const bright = 0.6 + Math.random() * 0.4;
+    cx.fillStyle = `rgba(${Math.floor(60*bright)},${Math.floor(55*bright)},${Math.floor(48*bright)},0.7)`;
+    cx.beginPath();
+    cx.ellipse(x, y, r, r * 0.7, Math.random() * Math.PI, 0, Math.PI * 2);
+    cx.fill();
+  }
+  return cx.createPattern(c, 'repeat');
+}
+
+function getAsphaltPattern(ctx) {
+  if (!_asphaltPattern) _asphaltPattern = createAsphaltTexture();
+  return _asphaltPattern;
+}
+
+function getBallastPattern(ctx) {
+  if (!_ballastPattern) _ballastPattern = createBallastTexture();
+  return _ballastPattern;
+}
+
+// ================================================================
+//  Road Rendering
+// ================================================================
+function drawRoad(ctx, cw, ch) {
+  const s = worldToCanvas(0, 0, cw, ch).s;
+  const rhw = GEOMETRY.roadHalfWidth * state.roadScale;
+
+  // Road surface with asphalt texture
+  const roadTop = worldToCanvas(0, rhw, cw, ch);
+  const roadBot = worldToCanvas(0, -rhw, cw, ch);
+  const roadGrad = ctx.createLinearGradient(0, roadTop.y, 0, roadBot.y);
+  roadGrad.addColorStop(0, '#101613');
+  roadGrad.addColorStop(0.15, '#141a17');
+  roadGrad.addColorStop(0.5, '#161d19');
+  roadGrad.addColorStop(0.85, '#141a17');
+  roadGrad.addColorStop(1, '#101613');
+  ctx.fillStyle = roadGrad;
+  ctx.fillRect(0, roadTop.y, cw, roadBot.y - roadTop.y);
+
+  // Asphalt grain texture overlay
+  const asphalt = getAsphaltPattern(ctx);
+  if (asphalt) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = asphalt;
+    ctx.fillRect(0, roadTop.y, cw, roadBot.y - roadTop.y);
+    ctx.restore();
+  }
+
+  // Road edge lines (subtle gold)
+  ctx.strokeStyle = COLORS.roadEdge;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(0, roadTop.y); ctx.lineTo(cw, roadTop.y);
+  ctx.moveTo(0, roadBot.y); ctx.lineTo(cw, roadBot.y);
+  ctx.stroke();
+
+  // Shoulder/rumble strips (very subtle texture near edges)
+  const shoulderTop = worldToCanvas(0, rhw - 0.3, cw, ch);
+  const shoulderBot = worldToCanvas(0, -rhw + 0.3, cw, ch);
+  ctx.strokeStyle = 'rgba(201,168,76,0.03)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([2 * s, 2 * s]);
+  ctx.beginPath();
+  ctx.moveTo(0, shoulderTop.y); ctx.lineTo(cw, shoulderTop.y);
+  ctx.moveTo(0, shoulderBot.y); ctx.lineTo(cw, shoulderBot.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Center double-dashed line (yellow tint, wider gap for 4-lane feel)
+  const center = worldToCanvas(0, 0, cw, ch);
+  ctx.setLineDash([5 * s, 3 * s]);
+  ctx.strokeStyle = COLORS.laneDashYellow;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, center.y - 1.5);
+  ctx.lineTo(cw, center.y - 1.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, center.y + 1.5);
+  ctx.lineTo(cw, center.y + 1.5);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Lane divider lines (subtle, between lanes on each side)
+  const laneDivTop = worldToCanvas(0, rhw * 0.5, cw, ch);
+  const laneDivBot = worldToCanvas(0, -rhw * 0.5, cw, ch);
+  ctx.setLineDash([4 * s, 3 * s]);
+  ctx.strokeStyle = 'rgba(201,168,76,0.04)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(0, laneDivTop.y); ctx.lineTo(cw, laneDivTop.y);
+  ctx.moveTo(0, laneDivBot.y); ctx.lineTo(cw, laneDivBot.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Crossing box (wider to match road)
+  const boxLeft = worldToCanvas(-GEOMETRY.halfBox, rhw, cw, ch);
+  const boxRight = worldToCanvas(GEOMETRY.halfBox, -rhw, cw, ch);
+  const boxW = boxRight.x - boxLeft.x;
+  const boxH = boxRight.y - boxLeft.y;
+
+  // Crossing fill with ballast texture
+  ctx.fillStyle = '#1a1e1b';
+  ctx.fillRect(boxLeft.x, boxLeft.y, boxW, boxH);
+  const ballast = getBallastPattern(ctx);
+  if (ballast) {
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = ballast;
+    ctx.fillRect(boxLeft.x, boxLeft.y, boxW, boxH);
+    ctx.restore();
+  }
+
+  // Railroad tracks (two rails running VERTICALLY across the road, perpendicular to traffic)
+  // Track gauge: standard ~1.435m, scaled to ~1.4 world units, centered on crossing
+  const trackGauge = 1.4;
+  const railWidth = 2.5 * s;
+  // Left rail (at x = -trackGauge/2 from crossing center)
+  const railX1 = worldToCanvas(-trackGauge / 2, 0, cw, ch).x;
+  // Right rail (at x = +trackGauge/2 from crossing center)
+  const railX2 = worldToCanvas(trackGauge / 2, 0, cw, ch).x;
+  // Extend tracks beyond crossing vertically
+  const trackTop = worldToCanvas(0, GEOMETRY.roadHalfWidth * state.roadScale + 6, cw, ch).y;
+  const trackBot = worldToCanvas(0, -(GEOMETRY.roadHalfWidth * state.roadScale + 6), cw, ch).y;
+
+  // Rail shadow
+  ctx.fillStyle = COLORS.railShadow;
+  ctx.fillRect(railX1 + 1.5 * s, trackTop, railWidth + 1 * s, trackBot - trackTop);
+  ctx.fillRect(railX2 + 1.5 * s, trackTop, railWidth + 1 * s, trackBot - trackTop);
+
+  // Rail body
+  ctx.fillStyle = COLORS.rail;
+  ctx.fillRect(railX1, trackTop, railWidth, trackBot - trackTop);
+  ctx.fillRect(railX2, trackTop, railWidth, trackBot - trackTop);
+
+  // Rail highlight (left edge)
+  ctx.fillStyle = COLORS.railHighlight;
+  ctx.fillRect(railX1, trackTop, 1 * s, trackBot - trackTop);
+  ctx.fillRect(railX2, trackTop, 1 * s, trackBot - trackTop);
+
+  // Wooden sleepers/ties under tracks (horizontal planks across both rails)
+  ctx.fillStyle = '#3a2e22';
+  const sleeperSpacing = 5 * s;
+  const sleeperPad = 3 * s;
+  for (let y = boxLeft.y - 15 * s; y < boxRight.y + 15 * s; y += sleeperSpacing) {
+    ctx.fillRect(railX1 - sleeperPad, y, (railX2 - railX1) + 2 * sleeperPad, 2.5 * s);
+  }
+  // Sleepers under extended tracks (above crossing)
+  for (let y = trackTop; y < boxLeft.y; y += sleeperSpacing) {
+    ctx.fillRect(railX1 - sleeperPad, y, (railX2 - railX1) + 2 * sleeperPad, 2.5 * s);
+  }
+  // Sleepers under extended tracks (below crossing)
+  for (let y = boxRight.y; y < trackBot; y += sleeperSpacing) {
+    ctx.fillRect(railX1 - sleeperPad, y, (railX2 - railX1) + 2 * sleeperPad, 2.5 * s);
+  }
+
+  // Hazard hatching inside crossing (diagonal warning stripes)
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(boxLeft.x, boxLeft.y, boxW, boxH);
+  ctx.clip();
+  ctx.strokeStyle = COLORS.crossingHatch;
+  ctx.lineWidth = 0.8;
+  const hatchSpacing = 5 * s;
+  for (let i = -25; i < 50; i++) {
+    const xOff = boxLeft.x + i * hatchSpacing;
+    ctx.beginPath();
+    ctx.moveTo(xOff, boxLeft.y);
+    ctx.lineTo(xOff + boxH * 0.6, boxRight.y);
+    ctx.stroke();
+  }
+  // Reverse hatching
+  for (let i = -25; i < 50; i++) {
+    const xOff = boxLeft.x + i * hatchSpacing + hatchSpacing * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(xOff, boxRight.y);
+    ctx.lineTo(xOff + boxH * 0.6, boxLeft.y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Crossing border (thicker, more prominent)
+  ctx.strokeStyle = COLORS.crossingBorder;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boxLeft.x, boxLeft.y, boxW, boxH);
+
+  // Crossing center marking
+  ctx.setLineDash([3 * s, 2 * s]);
+  ctx.strokeStyle = 'rgba(201,168,76,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(boxLeft.x, center.y);
+  ctx.lineTo(boxRight.x, center.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Stop lines at crossing edges
+  ctx.strokeStyle = 'rgba(201,168,76,0.15)';
+  ctx.lineWidth = 1.5;
+  // Left stop line
+  ctx.beginPath();
+  ctx.moveTo(boxLeft.x, boxLeft.y);
+  ctx.lineTo(boxLeft.x, boxRight.y);
+  ctx.stroke();
+  // Right stop line
+  ctx.beginPath();
+  ctx.moveTo(boxRight.x, boxLeft.y);
+  ctx.lineTo(boxRight.x, boxRight.y);
+  ctx.stroke();
+
+  // Disorder zones (subtle red gradient)
+  const dzLeft = worldToCanvas(-GEOMETRY.approachLength, rhw, cw, ch);
+  const dzLeftEnd = worldToCanvas(-GEOMETRY.approachLength + GEOMETRY.disorderZoneLength, -rhw, cw, ch);
+  const dzGrad1 = ctx.createLinearGradient(dzLeft.x, 0, dzLeftEnd.x, 0);
+  dzGrad1.addColorStop(0, 'rgba(212,85,85,0.005)');
+  dzGrad1.addColorStop(1, 'rgba(212,85,85,0.03)');
+  ctx.fillStyle = dzGrad1;
+  ctx.fillRect(dzLeft.x, dzLeft.y, dzLeftEnd.x - dzLeft.x, dzLeftEnd.y - dzLeft.y);
+  ctx.strokeStyle = COLORS.disorderBorder;
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(dzLeft.x, dzLeft.y, dzLeftEnd.x - dzLeft.x, dzLeftEnd.y - dzLeft.y);
+
+  const dzRight = worldToCanvas(GEOMETRY.approachLength + GEOMETRY.crossingBoxLength, rhw, cw, ch);
+  const dzRightEnd = worldToCanvas(GEOMETRY.approachLength + GEOMETRY.crossingBoxLength - GEOMETRY.disorderZoneLength, -rhw, cw, ch);
+  const dzGrad2 = ctx.createLinearGradient(dzRight.x, 0, dzRightEnd.x, 0);
+  dzGrad2.addColorStop(0, 'rgba(212,85,85,0.03)');
+  dzGrad2.addColorStop(1, 'rgba(212,85,85,0.005)');
+  ctx.fillStyle = dzGrad2;
+  ctx.fillRect(dzRight.x, dzRight.y, dzRightEnd.x - dzRight.x, dzRightEnd.y - dzRight.y);
+  ctx.strokeStyle = COLORS.disorderBorder;
+  ctx.strokeRect(dzRight.x, dzRight.y, dzRightEnd.x - dzRight.x, dzRightEnd.y - dzRight.y);
+
+  // Direction labels
+  ctx.fillStyle = 'rgba(201,168,76,0.18)';
+  ctx.font = `500 ${Math.max(8, 9 * s)}px 'Albert Sans', sans-serif`;
+  ctx.textAlign = 'center';
+  const leftLabel = worldToCanvas(-GEOMETRY.approachLength / 2, rhw - 0.5, cw, ch);
+  ctx.fillText('\u2190 LEFT', leftLabel.x, leftLabel.y);
+  const rightLabel = worldToCanvas(GEOMETRY.approachLength + GEOMETRY.crossingBoxLength + GEOMETRY.recoveryLength / 2, -rhw + 0.5, cw, ch);
+  ctx.fillText('RIGHT \u2192', rightLabel.x, rightLabel.y);
+  const boxLabel = worldToCanvas(0, rhw - 0.5, cw, ch);
+  ctx.fillStyle = 'rgba(201,168,76,0.3)';
+  ctx.fillText('\u26a1 CROSSING', boxLabel.x, boxLabel.y);
+
+  // Ambient glow at crossing center
+  const centerPt = worldToCanvas(0, 0, cw, ch);
+  const glowRadius = 35 * s;
+  const glow = ctx.createRadialGradient(centerPt.x, centerPt.y, 0, centerPt.x, centerPt.y, glowRadius);
+  glow.addColorStop(0, 'rgba(201,168,76,0.025)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(centerPt.x - glowRadius, centerPt.y - glowRadius, glowRadius * 2, glowRadius * 2);
+}
+
+// ================================================================
+//  Barrier Rendering
+// ================================================================
+function drawBarrier(ctx, cw, ch, closed, flashTime, now, barrierValue) {
+  const rhw = GEOMETRY.roadHalfWidth * state.roadScale;
+  const boxLeft = worldToCanvas(-GEOMETRY.halfBox, rhw, cw, ch);
+  const boxRight = worldToCanvas(GEOMETRY.halfBox, -rhw, cw, ch);
+  const centerY = worldToCanvas(0, 0, cw, ch).y;
+  const s = boxLeft.s;
+  const armLen = Math.abs(centerY - boxLeft.y);
+
+  let armColor = closed ? COLORS.barrierClosed : COLORS.barrierOpen;
+  let alpha = 1.0;
+
+  // Warning flash when transitioning
+  if (!closed && now - flashTime < 0.5) {
+    const pulse = Math.sin((now - flashTime) * 14) * 0.5 + 0.5;
+    armColor = COLORS.barrierWarning;
+    alpha = 0.5 + pulse * 0.5;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // ── Metal posts with cylindrical gradient ──
+  const postR = 3.5 * s;
+
+  function drawMetalPost(px, py) {
+    // Post shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.arc(px + 1, py + 1, postR + 1, 0, Math.PI * 2);
+    ctx.fill();
+    // Post body (cylindrical gradient)
+    const postGrad = ctx.createLinearGradient(px - postR, py, px + postR, py);
+    postGrad.addColorStop(0, '#3a3a3a');
+    postGrad.addColorStop(0.3, '#6a6a6a');
+    postGrad.addColorStop(0.5, '#888888');
+    postGrad.addColorStop(0.7, '#6a6a6a');
+    postGrad.addColorStop(1, '#3a3a3a');
+    ctx.fillStyle = postGrad;
+    ctx.beginPath();
+    ctx.arc(px, py, postR, 0, Math.PI * 2);
+    ctx.fill();
+    // Post rim highlight
+    ctx.strokeStyle = 'rgba(180,180,180,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(px, py, postR, 0, Math.PI * 2);
+    ctx.stroke();
+    // Post base plate
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(px - postR * 1.2, py + postR * 0.6, postR * 2.4, postR * 0.5);
+  }
+
+  drawMetalPost(boxLeft.x, boxLeft.y);
+  drawMetalPost(boxRight.x, boxRight.y);
+
+  // ── Gate arms with red/white stripes ──
+  const armWidth = 4 * s;
+
+  function drawStripedArm(x, yStart, yEnd, isLeft) {
+    ctx.save();
+    // Arm shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(x - armWidth / 2 + 1, Math.min(yStart, yEnd) + 1, armWidth, Math.abs(yEnd - yStart));
+
+    // Clip arm shape
+    ctx.beginPath();
+    ctx.roundRect(x - armWidth / 2, Math.min(yStart, yEnd), armWidth, Math.abs(yEnd - yStart), 2 * s);
+    ctx.clip();
+
+    // Red/white alternating stripes
+    const stripeH = 6 * s;
+    const yMin = Math.min(yStart, yEnd);
+    const yMax = Math.max(yStart, yEnd);
+    for (let sy = yMin; sy < yMax; sy += stripeH * 2) {
+      ctx.fillStyle = '#d44040';
+      ctx.fillRect(x - armWidth / 2, sy, armWidth, stripeH);
+      ctx.fillStyle = '#e8e0d8';
+      ctx.fillRect(x - armWidth / 2, sy + stripeH, armWidth, stripeH);
+    }
+
+    // Arm border
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.roundRect(x - armWidth / 2, yMin, armWidth, yMax - yMin, 2 * s);
+    ctx.stroke();
+
+    // Metallic highlight along one edge
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 0.5;
+    const hlX = isLeft ? x + armWidth / 2 - 1 : x - armWidth / 2 + 1;
+    ctx.beginPath();
+    ctx.moveTo(hlX, yMin);
+    ctx.lineTo(hlX, yMax);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  if (closed) {
+    // Arms extend down to center (closed position)
+    drawStripedArm(boxLeft.x, boxLeft.y, centerY + 2, true);
+    drawStripedArm(boxRight.x, boxRight.y, centerY - 2, false);
+  } else if (barrierValue !== undefined && barrierValue > 0.01 && barrierValue < 0.99) {
+    // Smooth intermediate position during transition
+    const t = 1 - barrierValue; // 0 = closed, 1 = open
+    const partialLen = armLen * (1 - t * 0.85);
+    drawStripedArm(boxLeft.x, boxLeft.y, boxLeft.y + partialLen * Math.sign(centerY - boxLeft.y), true);
+    drawStripedArm(boxRight.x, boxRight.y, boxRight.y + partialLen * Math.sign(centerY - boxRight.y), false);
+  } else if (now - flashTime < 0.5) {
+    // Transitioning: arms partially raised
+    const t = (now - flashTime) / 0.5;
+    const partialLen = armLen * (1 - t * 0.7);
+    drawStripedArm(boxLeft.x, boxLeft.y, boxLeft.y + partialLen * Math.sign(centerY - boxLeft.y), true);
+    drawStripedArm(boxRight.x, boxRight.y, boxRight.y + partialLen * Math.sign(centerY - boxRight.y), false);
+  }
+  // When fully open, arms are not drawn (raised out of view)
+
+  // ── Warning lights on posts (pulsing when closed) ──
+  if (closed) {
+    const lightPulse = Math.sin(now * 6) * 0.3 + 0.7;
+    const lightR = postR * 0.35;
+
+    function drawWarningLight(lx, ly) {
+      // Light housing (small dark circle)
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.arc(lx, ly, lightR * 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      // Light glow (small red dot, minimal blur)
+      ctx.fillStyle = `rgba(255,40,40,${lightPulse})`;
+      ctx.shadowColor = '#ff2828';
+      ctx.shadowBlur = 3 * s;
+      ctx.beginPath();
+      ctx.arc(lx, ly, lightR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Subtle outer glow ring
+      ctx.strokeStyle = `rgba(255,40,40,${lightPulse * 0.15})`;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(lx, ly, lightR * 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    drawWarningLight(boxLeft.x, boxLeft.y - postR * 2.8);
+    drawWarningLight(boxRight.x, boxRight.y - postR * 2.8);
+  }
+
+  ctx.restore();
+}
+
+// ================================================================
+//  Vehicle Vector Art (Clean flat shapes with outlines)
+// ================================================================
+
+// -- Car (top-down sedan, clean vector) --
+function drawCar(ctx, x, y, s, facingRight, color, darkColor, lightColor) {
+  const w = VEHICLE_SIZES.car.w * s;
+  const h = VEHICLE_SIZES.car.h * s;
+
+  ctx.save();
+  ctx.translate(x, y);
+  if (!facingRight) ctx.scale(-1, 1);
+
+  // Shadow (simple, no blur)
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(1, h * 0.15, w * 0.44, h * 0.32, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Wheels (simple black circles)
+  const ww = w * 0.06, wh = h * 0.14;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(w * 0.22, -h * 0.48, ww * 2, wh);
+  ctx.fillRect(w * 0.22, h * 0.48 - wh, ww * 2, wh);
+  ctx.fillRect(-w * 0.28, -h * 0.48, ww * 2, wh);
+  ctx.fillRect(-w * 0.28, h * 0.48 - wh, ww * 2, wh);
+
+  // Body (main rectangle with rounded ends)
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.roundRect(-w / 2, -h / 2, w, h, w * 0.12);
+  ctx.fill();
+  ctx.stroke();
+
+  // Hood (front, lighter)
+  ctx.fillStyle = lightColor;
+  ctx.globalAlpha = 0.2;
+  ctx.beginPath();
+  ctx.roundRect(w * 0.12, -h * 0.38, w * 0.34, h * 0.76, 2 * s);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Roof (center, slightly raised look)
+  ctx.fillStyle = darkColor;
+  ctx.globalAlpha = 0.25;
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.18, -h * 0.35, w * 0.34, h * 0.7, 2 * s);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Windshield
+  ctx.fillStyle = '#1a3028';
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.roundRect(w * 0.10, -h * 0.36, w * 0.14, h * 0.72, 1.5 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Rear window
+  ctx.fillStyle = '#1a3028';
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.28, -h * 0.30, w * 0.10, h * 0.60, 1.5 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Headlights
+  ctx.fillStyle = '#f0e8c0';
+  ctx.beginPath();
+  ctx.roundRect(w * 0.42, -h * 0.28, w * 0.06, h * 0.16, 1 * s);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(w * 0.42, h * 0.12, w * 0.06, h * 0.16, 1 * s);
+  ctx.fill();
+
+  // Tail lights
+  ctx.fillStyle = '#d44040';
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.48, -h * 0.28, w * 0.06, h * 0.16, 1 * s);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.48, h * 0.12, w * 0.06, h * 0.16, 1 * s);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// -- Bike (bold motorcycle silhouette, clearly distinct from car) --
+function drawBike(ctx, x, y, s, facingRight, color, darkColor) {
+  const w = VEHICLE_SIZES.bike.w * s;
+  const h = VEHICLE_SIZES.bike.h * s;
+
+  ctx.save();
+  ctx.translate(x, y);
+  if (!facingRight) ctx.scale(-1, 1);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(1, h * 0.15, w * 0.42, h * 0.35, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rear wheel (black circle)
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(-w * 0.32, 0, h * 0.38, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Front wheel (black circle)
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(w * 0.32, 0, h * 0.38, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Frame (thick dark bar connecting wheels)
+  ctx.fillStyle = '#1a1a1a';
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.28, -h * 0.18, w * 0.56, h * 0.36, 2 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Fuel tank (bright colored, prominent)
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.06, -h * 0.35, w * 0.28, h * 0.70, 3 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Seat (dark, behind tank)
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.26, -h * 0.22, w * 0.22, h * 0.44, 2 * s);
+  ctx.fill();
+
+  // Handlebars (vertical bar at front)
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 2 * s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.28, -h * 0.45);
+  ctx.lineTo(w * 0.28, h * 0.45);
+  ctx.stroke();
+
+  // Rider body (simple oval, darker than frame)
+  ctx.fillStyle = '#1e2a24';
+  ctx.beginPath();
+  ctx.ellipse(-w * 0.04, -h * 0.05, w * 0.12, h * 0.30, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Helmet (prominent circle on top)
+  ctx.fillStyle = darkColor;
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(-w * 0.06, -h * 0.38, h * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Headlight (bright yellow dot at front)
+  ctx.fillStyle = '#f0e8c0';
+  ctx.shadowColor = '#f0e8c0';
+  ctx.shadowBlur = 1 * s;
+  ctx.beginPath();
+  ctx.arc(w * 0.44, 0, 1 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Tail light (red dot at back)
+  ctx.fillStyle = '#d44040';
+  ctx.beginPath();
+  ctx.arc(-w * 0.42, 0, 1.5 * s, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// -- Auto-rickshaw (bold tuk-tuk silhouette, clearly distinct from car) --
+function drawAuto(ctx, x, y, s, facingRight, color, darkColor) {
+  const w = VEHICLE_SIZES.auto.w * s;
+  const h = VEHICLE_SIZES.auto.h * s;
+
+  ctx.save();
+  ctx.translate(x, y);
+  if (!facingRight) ctx.scale(-1, 1);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(1, h * 0.12, w * 0.44, h * 0.38, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rear wheels (two circles, wider apart)
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(-w * 0.26, -h * 0.42, h * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(-w * 0.26, h * 0.42, h * 0.14, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Front wheel (single, at nose)
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(w * 0.38, 0, h * 0.12, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rear cabin (wide, boxy, dark colored)
+  ctx.fillStyle = darkColor;
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.40, -h * 0.40, w * 0.52, h * 0.80, 2 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Canvas roof lines (horizontal texture)
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 0.8;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.34, i * h * 0.14);
+    ctx.lineTo(w * 0.04, i * h * 0.14);
+    ctx.stroke();
+  }
+
+  // Front hood (narrower, bright colored — the "nose" of the tuk-tuk)
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(w * 0.10, -h * 0.28, w * 0.30, h * 0.56, 3 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Windshield (between cabin and hood)
+  ctx.fillStyle = '#1a3028';
+  ctx.strokeStyle = '#0a0e0c';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(w * 0.06, -h * 0.22, w * 0.08, h * 0.44, 1 * s);
+  ctx.fill();
+  ctx.stroke();
+
+  // Headlights (round, bright yellow)
+  ctx.fillStyle = '#f0e8c0';
+  ctx.shadowColor = '#f0e8c0';
+  ctx.shadowBlur = 1 * s;
+  ctx.beginPath();
+  ctx.arc(w * 0.44, -h * 0.12, 1 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(w * 0.44, h * 0.12, 1 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Tail lights (red, at rear)
+  ctx.fillStyle = '#d44040';
+  ctx.beginPath();
+  ctx.arc(-w * 0.42, -h * 0.18, 1.5 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(-w * 0.42, h * 0.18, 1.5 * s, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// -- Main vehicle dispatch with disorder highlighting and boundary enforcement --
+function drawVehicle(ctx, v, cw, ch, barrierClosed, trainActive, trainY, trainTotalLen) {
+  const sizes = VEHICLE_SIZES[v.class] || VEHICLE_SIZES.car;
+  // Scale lateral position with road width so vehicles stay centered in lanes
+  const p = worldToCanvas(v.x, v.y * state.roadScale, cw, ch);
+  const s = p.s * state.vehicleScale;
+
+  const facingRight = v.side === 'left';
+  const color = COLORS.vehicle[v.class] || COLORS.vehicle.car;
+  const darkColor = COLORS.vehicleDark[v.class] || COLORS.vehicleDark.car;
+  const lightColor = COLORS.vehicleLight[v.class] || COLORS.vehicleLight.car;
+
+  const lat = Math.abs(v.lateral_offset || 0);
+  const isOvertaking = lat > 0.3;
+  const isWrongSide = lat > 0.58;
+
+  // ---- Barrier boundary enforcement ----
+  // When barrier is closed, vehicles must not be in the crossing box
+  const halfBox = GEOMETRY.crossingBoxLength / 2; // 6
+  const inCrossing = Math.abs(v.x) < halfBox;
+  const barrierViolation = barrierClosed && inCrossing;
+
+  // ---- Train boundary enforcement ----
+  // Active train occupies x≈0, y range = [trainY - totalLen*direction, trainY]
+  let trainViolation = false;
+  if (trainActive) {
+    const trainDir = state.train.direction;
+    const trainTop = trainDir > 0 ? trainY : trainY - trainTotalLen;
+    const trainBot = trainDir > 0 ? trainY - trainTotalLen : trainY;
+    const trainBoxTop = Math.max(trainTop, trainBot);
+    const trainBoxBot = Math.min(trainTop, trainBot);
+    // Vehicle overlaps with train bounding box (x near 0, y within train range)
+    const xNearTrain = Math.abs(v.x) < sizes.w * 0.6;
+    const yInTrain = v.y < trainBoxTop + 2 && v.y > trainBoxBot - 2;
+    trainViolation = xNearTrain && yInTrain;
+  }
+
+  // Draw the vehicle sprite (always draw it, even if in violation)
+  switch (v.class) {
+    case 'bike':
+      drawBike(ctx, p.x, p.y, s, facingRight, color, darkColor);
+      break;
+    case 'auto':
+      drawAuto(ctx, p.x, p.y, s, facingRight, color, darkColor);
+      break;
+    default:
+      drawCar(ctx, p.x, p.y, s, facingRight, color, darkColor, lightColor);
+      break;
+  }
+
+  // Boundary violation - bold red pulsing border
+  const now = performance.now() / 1000;
+  const violation = barrierViolation || trainViolation;
+  if (violation) {
+    const halfW = (sizes.w * s) / 2;
+    const halfH = (sizes.h * s) / 2;
+    const pulse = Math.sin(now * 10) * 0.4 + 0.6;
+    ctx.strokeStyle = `rgba(255,20,20,${pulse})`;
+    ctx.lineWidth = Math.max(2, 3 * s);
+    ctx.setLineDash([4 * s, 3 * s]);
+    ctx.beginPath();
+    ctx.roundRect(p.x - halfW - 3, p.y - halfH - 3, halfW * 2 + 6, halfH * 2 + 6, 3 * s);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Red fill overlay
+    ctx.fillStyle = `rgba(255,0,0,${0.08 * pulse})`;
+    ctx.beginPath();
+    ctx.roundRect(p.x - halfW - 2, p.y - halfH - 2, halfW * 2 + 4, halfH * 2 + 4, 2 * s);
+    ctx.fill();
+  }
+
+  // Wrong-side red outline (clean, no shadow)
+  if (isWrongSide && !violation) {
+    const halfW = (sizes.w * s) / 2;
+    const halfH = (sizes.h * s) / 2;
+    ctx.strokeStyle = '#ff4040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(p.x - halfW - 2, p.y - halfH - 2, halfW * 2 + 4, halfH * 2 + 4, 3 * s);
+    ctx.stroke();
+  }
+
+  // Overtaking dot indicator
+  if (isOvertaking && !isWrongSide && !violation) {
+    const dotX = p.x + (sizes.w * s) / 2 + 4 * s;
+    const dotY = p.y - (sizes.h * s) / 2;
+    ctx.fillStyle = '#ff8c3c';
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 2 * s, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Debug: vehicle ID, speed, and lateral offset
+  if (state.showDebug) {
+    const halfW = (sizes.w * s) / 2;
+    const halfH = (sizes.h * s) / 2;
+    ctx.fillStyle = 'rgba(200,212,204,0.5)';
+    ctx.font = `500 ${Math.max(6, 7 * s)}px 'SF Mono', 'Consolas', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${v.id}`, p.x, p.y - halfH - 4 * s);
+    ctx.fillText(`${v.speed.toFixed(1)}`, p.x, p.y + halfH + 8 * s);
+    if (lat > 0.1) {
+      ctx.fillStyle = isWrongSide ? '#ff4040' : '#ff8c3c';
+      ctx.fillText(`lat:${v.lateral_offset.toFixed(2)}`, p.x, p.y + halfH + 16 * s);
+    }
+  }
+}
+
+// ================================================================
+//  Effects
+// ================================================================
+function drawConflictFlash(ctx, cw, ch, flashTime, now) {
+  if (now - flashTime > 0.4) return;
+  const alpha = 1.0 - (now - flashTime) / 0.4;
+  const p = worldToCanvas(0, 0, cw, ch);
+  const s = p.s;
+
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.3;
+  const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 25 * s);
+  grad.addColorStop(0, '#d45555');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 25 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ================================================================
+//  Train System (visual overlay — continuous freight)
+// ================================================================
+// The train feeds new freight cars at a fixed entry point just off-screen.
+// Cars emerge at the rate of speed/carLength per sec, keeping the tail
+// stationary while the front moves forward. The train can grow to 30+ cars
+// but only 2-3 are on-screen at any time — the rest are culled.
+// The last car clears the crossing ~1 second before the barrier opens.
+// ================================================================
+function drawTrain(ctx, cw, ch, train) {
+  if (!train.active) return;
+  const s = worldToCanvas(0, 0, cw, ch).s;
+  const trackX = worldToCanvas(0, 0, cw, ch).x;
+  const screenYMax = GEOMETRY.canvasYMax;
+  const screenYMin = GEOMETRY.canvasYMin;
+
+  ctx.save();
+  try {
+    const carW = 10 * s;
+    const engineW = 11 * s;
+
+    // Iterate through each car, compute its world Y range, draw if on-screen
+    for (let i = 0; i < train.numCars; i++) {
+      const isEngine = (i === 0);
+      const len = isEngine ? train.engineLength : train.carLength;
+      const w = isEngine ? engineW : carW;
+
+      // Car front (leading edge) and back (trailing edge) in world Y
+      // Engine is at the very front, cars trail behind
+      let carFront, carBack;
+      if (train.direction > 0) {
+        // Moving south-to-north: front is at train.y, cars trail toward -Y
+        carFront = train.y - (isEngine ? 0 : train.engineLength + (i - 1) * train.carLength);
+        carBack = carFront - len;
+      } else {
+        // Moving north-to-south: front is at train.y, cars trail toward +Y
+        carFront = train.y + (isEngine ? 0 : train.engineLength + (i - 1) * train.carLength);
+        carBack = carFront + len;
+      }
+
+      // Skip cars entirely off-screen (with margin for glow/shadow)
+      const carMaxWorldY = Math.max(carFront, carBack);
+      const carMinWorldY = Math.min(carFront, carBack);
+      if (carMaxWorldY < screenYMin - 5 || carMinWorldY > screenYMax + 5) continue;
+
+      // Convert to canvas Y
+      const carTop = worldToCanvas(0, carMaxWorldY, cw, ch).y;
+      const carBot = worldToCanvas(0, carMinWorldY, cw, ch).y;
+      const carHpx = Math.max(1, carBot - carTop);
+
+      // --- Car shadow ---
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(trackX - w / 2 + 2, carTop + 2, w, carHpx);
+
+      // --- Car body ---
+      if (isEngine) {
+        const engineGrad = ctx.createLinearGradient(trackX - w / 2, carTop, trackX + w / 2, carTop);
+        engineGrad.addColorStop(0, COLORS.trainBodyLight);
+        engineGrad.addColorStop(0.3, COLORS.trainBody);
+        engineGrad.addColorStop(0.7, COLORS.trainBodyDark);
+        engineGrad.addColorStop(1, COLORS.trainBodyDark);
+        ctx.fillStyle = engineGrad;
+      } else {
+        // Alternate freight car colors for variety
+        const carColors = [
+          ['#1e3850', '#162a42', '#0e1e30'],  // dark blue
+          ['#3a2a1a', '#2e2015', '#1e1510'],  // brown freight
+          ['#2a3a2a', '#1e2e1e', '#142214'],  // dark green
+          ['#3a2020', '#2e1818', '#201010'],  // dark red
+        ];
+        const palette = carColors[i % carColors.length];
+        const carGrad = ctx.createLinearGradient(trackX - w / 2, carTop, trackX + w / 2, carTop);
+        carGrad.addColorStop(0, palette[0]);
+        carGrad.addColorStop(0.5, palette[1]);
+        carGrad.addColorStop(1, palette[2]);
+        ctx.fillStyle = carGrad;
+      }
+      ctx.beginPath();
+      ctx.roundRect(trackX - w / 2, carTop, w, carHpx, 3 * s);
+      ctx.fill();
+
+      // --- Car border ---
+      ctx.strokeStyle = 'rgba(100,140,170,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(trackX - w / 2, carTop, w, carHpx, 3 * s);
+      ctx.stroke();
+
+      // --- Stripe along the side ---
+      if (isEngine) {
+        ctx.fillStyle = COLORS.trainStripe;
+      } else {
+        ctx.fillStyle = 'rgba(200,180,100,0.15)';
+      }
+      const stripeW = 2 * s;
+      ctx.fillRect(trackX - w / 2 + w * 0.3, carTop + 2 * s, stripeW, Math.max(1, carHpx - 4 * s));
+
+      // --- Freight car details (only if tall enough to see) ---
+      if (!isEngine && carHpx > 8) {
+        // Cargo container ridges
+        ctx.strokeStyle = 'rgba(80,100,120,0.25)';
+        ctx.lineWidth = 0.8;
+        const ridgeCount = Math.max(2, Math.floor(carHpx / (6 * s)));
+        for (let r = 1; r < ridgeCount; r++) {
+          const ry = carTop + (carHpx * r / ridgeCount);
+          ctx.beginPath();
+          ctx.moveTo(trackX - w * 0.35, ry);
+          ctx.lineTo(trackX + w * 0.35, ry);
+          ctx.stroke();
+        }
+        // Container end-lines
+        ctx.strokeStyle = 'rgba(120,140,160,0.2)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(trackX - w / 2 + 1, carTop + 2 * s);
+        ctx.lineTo(trackX - w / 2 + 1, carBot - 2 * s);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(trackX + w / 2 - 1, carTop + 2 * s);
+        ctx.lineTo(trackX + w / 2 - 1, carBot - 2 * s);
+        ctx.stroke();
+      }
+
+      // --- Engine headlight ---
+      if (isEngine) {
+        const hlY = train.direction > 0 ? carTop - 2 * s : carBot + 2 * s;
+        ctx.fillStyle = '#f0e8c0';
+        ctx.shadowColor = '#f0e8c0';
+        ctx.shadowBlur = 2 * s;
+        ctx.beginPath();
+        ctx.arc(trackX - w * 0.25, hlY, 1.5 * s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(trackX + w * 0.25, hlY, 1.5 * s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Exhaust stack
+        ctx.fillStyle = '#333';
+        const exY = train.direction > 0 ? carBot - carHpx * 0.2 : carTop + carHpx * 0.2;
+        ctx.beginPath();
+        ctx.arc(trackX, exY, 2 * s, 0, Math.PI * 2);
+        ctx.fill();
+        // Smoke puff
+        ctx.fillStyle = 'rgba(120,120,120,0.12)';
+        ctx.beginPath();
+        ctx.arc(trackX + 4 * s, exY, 3 * s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // --- Coupling between cars ---
+      if (i < train.numCars - 1) {
+        ctx.fillStyle = '#555';
+        const coupY = train.direction > 0 ? carBot + 1 * s : carTop - 1 * s;
+        // Only draw if visible
+        if (coupY > carTop - 4 * s && coupY < carBot + 4 * s) {
+          ctx.fillRect(trackX - 1 * s, coupY - 1 * s, 2 * s, 2 * s);
+        }
+      }
+    }
+
+    // Vibration lines when train is on-screen
+    ctx.strokeStyle = 'rgba(200,200,200,0.05)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 3; i++) {
+      const vy = worldToCanvas(0, screenYMin + Math.random() * (screenYMax - screenYMin), cw, ch).y;
+      const vx = trackX + (Math.random() - 0.5) * carW * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(vx, vy - 3 * s);
+      ctx.lineTo(vx, vy + 3 * s);
+      ctx.stroke();
+    }
+  } finally {
+    ctx.restore();
+  }
+}
+
+function updateTrain(dt) {
+  const t = state.train;
+  if (!t.active) return;
+
+  // Track elapsed time since train started
+  t.elapsedTime += dt;
+
+  // Move front forward
+  t.y += t.direction * t.speed * dt;
+
+  // Generate new freight cars at the tail (entry point)
+  // Cars emerge from t.entryY at a steady rate = carLength / speed
+  // This keeps the tail at the fixed entry point while the front moves away
+  if (!t.generationDone) {
+    t.genTimer += dt;
+    while (t.genTimer >= t.genInterval) {
+      t.numCars++;
+      t.genTimer -= t.genInterval;
+    }
+    // Stop generating at the calculated time
+    // The last generated car will clear the crossing ~1s before barrier opens
+    if (t.elapsedTime >= t.stopGenTime) {
+      t.generationDone = true;
+    }
+  }
+
+  // Check if the entire train has exited the visible area
+  // The tail must pass the far edge of the screen
+  const viewExit = GEOMETRY.canvasYMax + 20;
+  if (t.direction > 0) {
+    // Tail = front - totalLength (moving south-to-north)
+    // Done when tail is past the north edge
+    if (t.y - t.totalLength > viewExit) {
+      t.active = false;
+    }
+  } else {
+    // Tail = front + totalLength (moving north-to-south)
+    if (t.y + t.totalLength < -viewExit) {
+      t.active = false;
+    }
+  }
+}
+
+// ================================================================
+//  Collision Detection & Crash SFX
+// ================================================================
+
+// Max overlapping area ratio to consider a "real" collision (vehicles brushing by)
+const COLLISION_OVERLAP_THRESHOLD = 0.65;
+
+function detectVehicleCollisions(f, now) {
+  const vehicles = f.vehicles;
+  const newCollisions = [];
+
+  for (let i = 0; i < vehicles.length; i++) {
+    for (let j = i + 1; j < vehicles.length; j++) {
+      const a = vehicles[i];
+      const b = vehicles[j];
+
+      // Only vehicles from different lanes (opposite direction) can collide
+      if (a.side === b.side) continue;
+
+      // Only crash if at least one vehicle is on the wrong side (lat > 0.58 = red outline)
+      // Overtaking (0.3-0.58) and normal vehicles use queue/lane-change boundary logic instead
+      const aWrongSide = Math.abs(a.lateral_offset || 0) > 0.58;
+      const bWrongSide = Math.abs(b.lateral_offset || 0) > 0.58;
+      if (!aWrongSide && !bWrongSide) continue;
+
+      // Use the same VEHICLE_SIZES as the drawing code
+      const aSize = VEHICLE_SIZES[a.class] || VEHICLE_SIZES.car;
+      const bSize = VEHICLE_SIZES[b.class] || VEHICLE_SIZES.car;
+
+      // Check overlap in both road-aligned (X) and lateral (Y) dimensions
+      const xOverlap = Math.abs(a.x - b.x) < (aSize.w + bSize.w) / 2 * COLLISION_OVERLAP_THRESHOLD;
+      const yOverlap = Math.abs(a.y - b.y) < (aSize.h + bSize.h) / 2 * COLLISION_OVERLAP_THRESHOLD;
+
+      if (xOverlap && yOverlap) {
+        const collId = `${Math.min(a.id||i, b.id||j)}-${Math.max(a.id||i, b.id||j)}`;
+        newCollisions.push({
+          x: (a.x + b.x) / 2,
+          y: (a.y + b.y) / 2,
+          time: now,
+          word: '\uD83D\uDCA5', // boom emoji
+          id: collId,
+        });
+      }
+    }
+  }
+  return newCollisions;
+}
+
+function drawCollisionEffects(ctx, cw, ch) {
+  const now = performance.now() / 1000;
+  const colls = state.collisions;
+
+  // Remove expired collisions
+  for (let i = colls.length - 1; i >= 0; i--) {
+    if (now - colls[i].time > 1.0) {
+      colls.splice(i, 1);
+    }
+  }
+
+  for (const c of colls) {
+    const age = now - c.time;
+    const alpha = Math.min(1, 1 - age * 0.8);
+    const p = worldToCanvas(c.x, c.y * state.roadScale, cw, ch);
+    const s = p.s;
+
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(Math.sin(age * 12) * 0.08);
+
+    // --- Tiny flash glow ---
+    ctx.fillStyle = 'rgba(255,240,180,0.12)';
+    ctx.shadowColor = '#ffcc00';
+    ctx.shadowBlur = 2 * s;
+    ctx.beginPath();
+    ctx.arc(0, 0, 3 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // --- Tiny bang burst (no growth) ---
+    ctx.fillStyle = '#ffdd44';
+    ctx.strokeStyle = '#cc4400';
+    ctx.lineWidth = Math.max(0.6, 0.6 * s);
+    const spikes = 4;
+    const outerR = 2 * s;
+    const innerR = 0.8 * s;
+    ctx.beginPath();
+    for (let k = 0; k < spikes * 2; k++) {
+      const angle = (k / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+      const r = k % 2 === 0 ? outerR : innerR;
+      const px = Math.cos(angle) * r;
+      const py = Math.sin(angle) * r;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // --- Boom Emoji (no growth, just fade) ---
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.font = `${Math.max(4, 3 * s)}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.word, 0, 0);
+
+    ctx.restore();
+  }
+}
+
+// Check for collisions and merge into state list (runs once per frame)
+function updateCollisions(f, now) {
+  // Find new collisions
+  const fresh = detectVehicleCollisions(f, now);
+  const existingIds = new Set(state.collisions.map(c => c.id));
+
+  for (const nc of fresh) {
+    // Only add if not already active (prevents repeated triggers each frame)
+    if (!existingIds.has(nc.id)) {
+      state.collisions.push(nc);
+    }
+  }
+}
+
+// ================================================================
+//  Main Render Loop
+// ================================================================
+function render() {
+  if (!canvases.length) return;
+
+  // Use interpolated frame during playback, discrete frame when paused
+  const frame = state.playing
+    ? getInterpolatedFrame(state.data, state.fractionalFrame)
+    : getCurrentFrame();
+  const frame2 = state.compareMode
+    ? (state.playing
+      ? getInterpolatedFrame(state.data2, state.fractionalFrame)
+      : getFrame(state.data2, state.frameIndex))
+    : null;
+
+  const panels = [frame];
+  if (frame2) panels.push(frame2);
+
+  for (let i = 0; i < canvases.length && i < panels.length; i++) {
+    const { canvas, ctx, label } = canvases[i];
+    const f = panels[i];
+    const w = canvases[i].w;
+    const h = canvases[i].h;
+
+    if (!f) continue;
+
+    // Clear
+    ctx.fillStyle = COLORS.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Road
+    drawRoad(ctx, w, h);
+
+    // Conflict flash
+    if (f.metrics && f.metrics.conflict_count > 0) {
+      const prevFrame = getFrame(state.data, Math.max(0, state.frameIndex - 1));
+      if (prevFrame && f.metrics.conflict_count > (prevFrame.metrics?.conflict_count || 0)) {
+        state.conflictFlashTime = performance.now() / 1000;
+      }
+    }
+    drawConflictFlash(ctx, w, h, state.conflictFlashTime, performance.now() / 1000);
+
+    // Barrier
+    const barrierClosed = f.barrier_closed;
+    const barrierValue = f.barrier_value; // 0..1 for smooth interpolation
+    drawBarrier(ctx, w, h, barrierClosed, state.decisionFlashTime, performance.now() / 1000, barrierValue);
+
+    // Train (visual overlay, only on main panel)
+    if (i === 0) {
+      const now = performance.now() / 1000;
+      const dt = state.lastRenderTime ? Math.min(now - state.lastRenderTime, 0.1) : 1 / 60;
+      state.lastRenderTime = now;
+
+      const t = state.train;
+
+      // Spawn train when barrier closes
+      if (f.barrier_closed && !t.active) {
+        t.direction = 1; // always south-to-north for consistency
+        t.speed = 20;
+        t.genInterval = t.carLength / t.speed; // 0.4s per car
+        t.numCars = 1;     // start with engine only
+        t.genTimer = 0;
+        t.elapsedTime = 0;
+        t.generationDone = false;
+        t.active = true;
+
+        // Entry point: just off-screen south (for direction=1)
+        const entryMargin = 15;
+        t.entryY = -(GEOMETRY.canvasYMax + entryMargin); // -25
+
+        // Initial position: tail at entry point (cars emerge from there)
+        t.y = t.entryY + t.engineLength; // -13 (front just south of visible area)
+
+        // Find when barrier will next open by scanning frame data
+        const data = state.data;
+        const currentIdx = state.frameIndex;
+        let openIdx = currentIdx + 1;
+        while (openIdx < data.frames.length && data.frames[openIdx].barrier_closed) {
+          openIdx++;
+        }
+        const barrierSecs = (openIdx - currentIdx) / 2; // fps=2
+
+        // Time for last car to travel from entry point to crossing exit
+        const crossingExit = GEOMETRY.roadHalfWidth * state.roadScale; // ~4.2
+        const lastCarDist = Math.abs(t.entryY) + crossingExit; // 29.2
+        const lastCarTime = lastCarDist / t.speed; // ~1.46s
+
+        // Stop generating so last car clears ~1 second before barrier opens
+        t.stopGenTime = Math.max(0, barrierSecs - 1 - lastCarTime);
+      }
+
+      // When barrier opens while train is still crossing:
+      // Continue drawing the train until its tail exits naturally (handled in updateTrain)
+      // This prevents the train from vanishing mid-crossing
+
+      // Advance the train regardless of play/pause
+      if (t.active) {
+        updateTrain(dt);
+      }
+    }
+    if (state.train.active) {
+      drawTrain(ctx, w, h, state.train);
+    }
+
+    // Disorder zone pulse when disorder is high
+    if (f.metrics && f.metrics.disorder_index > 0.15) {
+      const disorder = f.metrics.disorder_index;
+      const now = performance.now() / 1000;
+      const pulse = Math.sin(now * 3) * 0.5 + 0.5;
+      const alpha = disorder * 0.08 * (0.6 + pulse * 0.4);
+      const rhw = GEOMETRY.roadHalfWidth * state.roadScale;
+      const dzLeft = worldToCanvas(-GEOMETRY.approachLength, rhw, w, h);
+      const dzLeftEnd = worldToCanvas(-GEOMETRY.approachLength + GEOMETRY.disorderZoneLength, -rhw, w, h);
+      const dzRight = worldToCanvas(GEOMETRY.approachLength + GEOMETRY.crossingBoxLength, rhw, w, h);
+      const dzRightEnd = worldToCanvas(GEOMETRY.approachLength + GEOMETRY.crossingBoxLength - GEOMETRY.disorderZoneLength, -rhw, w, h);
+
+      ctx.fillStyle = `rgba(255,100,50,${alpha})`;
+      ctx.fillRect(dzLeft.x, dzLeft.y, dzLeftEnd.x - dzLeft.x, dzLeftEnd.y - dzLeft.y);
+      ctx.fillRect(dzRight.x, dzRight.y, dzRightEnd.x - dzRight.x, dzRightEnd.y - dzRight.y);
+    }
+
+    // Vehicles (sorted by y for proper overlap)
+    const sorted = [...f.vehicles].sort((a, b) => a.y - b.y);
+    const trainActive = state.train.active;
+    const trainY = state.train.y;
+    const trainTotalLen = state.train.totalLength;
+    for (const v of sorted) {
+      drawVehicle(ctx, v, w, h, barrierClosed, trainActive, trainY, trainTotalLen);
+    }
+
+    // Collision effects (drawn on main panel only)
+    if (i === 0) {
+      updateCollisions(f, performance.now() / 1000);
+      drawCollisionEffects(ctx, w, h);
+    }
+
+    // Debug overlay
+    if (state.showDebug && f.metrics) {
+      ctx.fillStyle = 'rgba(12,15,13,0.92)';
+      ctx.strokeStyle = 'rgba(201,168,76,0.12)';
+      ctx.lineWidth = 1;
+      const panelW = 195;
+      const panelH = 105;
+      ctx.beginPath();
+      ctx.roundRect(4, 4, panelW, panelH, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#6a8a72';
+      ctx.font = '500 9px "SF Mono", "Consolas", monospace';
+      ctx.textAlign = 'left';
+      const lines = [
+        `L Queue: ${f.metrics.queue_left} (${f.metrics.queue_length_left}m)`,
+        `R Queue: ${f.metrics.queue_right} (${f.metrics.queue_length_right}m)`,
+        `Disorder: ${f.metrics.disorder_index}`,
+        `Wrong Side: ${f.metrics.wrong_side_queue_share}`,
+        `Risk: ${f.metrics.occupancy_risk}`,
+        `Conflicts: ${f.metrics.conflict_count}`,
+      ];
+      lines.forEach((line, j) => {
+        ctx.fillText(line, 10, 18 + j * 14);
+      });
+    }
+
+    // Update label
+    label.textContent = i === 0 ? (state.data?.policy || '\u2014') : (state.data2?.policy || '\u2014');
+
+    // Update HUD
+    updateHUD(f, i);
+  }
+}
+
+function updateHUD(frame, panelIndex) {
+  const panel = canvases[panelIndex]?.panel;
+  if (!panel) return;
+
+  const timeEl = panel.querySelector('.time');
+  const barrierEl = panel.querySelector('.barrier-open, .barrier-closed');
+
+  if (timeEl) timeEl.textContent = `${frame.time.toFixed(1)}s`;
+  if (barrierEl) {
+    barrierEl.className = frame.barrier_closed ? 'barrier-closed' : 'barrier-open';
+    barrierEl.textContent = frame.barrier_closed ? '\u25cf Barrier Closed' : '\u25cf Barrier Open';
+  }
+
+  const m = frame.metrics || {};
+  const setHud = (key, val) => {
+    const el = panel.querySelector(`[data-hud="${key}"]`);
+    if (el) el.textContent = val;
+  };
+  setHud('queueLeft', m.queue_left ?? '\u2014');
+  setHud('queueRight', m.queue_right ?? '\u2014');
+
+  // Disorder bar indicator
+  const disorderBar = panel.querySelector('[data-hud="disorderBar"]');
+  if (disorderBar) {
+    const disorderVal = m.disorder_index ?? 0;
+    const fill = disorderBar.querySelector('.disorder-fill');
+    const text = disorderBar.querySelector('.disorder-text');
+    if (fill) fill.style.width = `${Math.min(100, disorderVal * 200)}%`;
+    if (text) {
+      text.textContent = `Disorder: ${disorderVal.toFixed(3)}`;
+      text.className = 'disorder-text' + (disorderVal > 0.4 ? ' critical' : disorderVal > 0.15 ? ' high' : '');
+    }
+  }
+
+  // Wrong side queue share
+  const wrongSideVal = m.wrong_side_queue_share ?? 0;
+  const wrongSideEl = panel.querySelector('[data-hud="wrongSide"]');
+  if (wrongSideEl) {
+    wrongSideEl.textContent = wrongSideVal.toFixed(3);
+    wrongSideEl.className = wrongSideVal > 0.3 ? 'metric-val risk-high' : 'metric-val';
+  }
+
+  const riskEl = panel.querySelector('[data-hud="risk"]');
+  if (riskEl) {
+    riskEl.textContent = (m.occupancy_risk ?? 0).toFixed(3);
+    riskEl.className = (m.occupancy_risk ?? 0) > 0.7 ? 'metric-val risk-high' : 'metric-val';
+  }
+  if (state.showDebug) {
+    setHud('debugInfo', `${frame.vehicles?.length || 0} vehicles`);
+    const debugEl = panel.querySelector('[data-hud="debug"]');
+    if (debugEl) debugEl.style.display = '';
+  } else {
+    const debugEl = panel.querySelector('[data-hud="debug"]');
+    if (debugEl) debugEl.style.display = 'none';
+  }
+}
+
+// ================================================================
+//  Data Access
+// ================================================================
+function getCurrentFrame() {
+  return getFrame(state.data, state.frameIndex);
+}
+
+function getFrame(data, index) {
+  if (!data || !data.frames || !data.frames.length) return null;
+  const i = Math.max(0, Math.min(index, data.frames.length - 1));
+  return data.frames[i];
+}
+
+// Interpolate between two frames for smooth playback
+function getInterpolatedFrame(data, fractionalIndex) {
+  if (!data || !data.frames || data.frames.length < 2) return getFrame(data, Math.round(fractionalIndex));
+  const maxIdx = data.frames.length - 1;
+  const idx = Math.max(0, Math.min(fractionalIndex, maxIdx));
+  const i0 = Math.floor(idx);
+  const i1 = Math.min(i0 + 1, maxIdx);
+  const t = idx - i0; // interpolation factor 0..1
+  if (t < 0.001) return data.frames[i0]; // snap to frame when very close
+
+  const f0 = data.frames[i0];
+  const f1 = data.frames[i1];
+
+  // Interpolate vehicles by matching IDs
+  const interpVehicles = [];
+  const v1Map = {};
+  for (const v of f1.vehicles || []) v1Map[v.id] = v;
+
+  for (const v0 of f0.vehicles || []) {
+    const v1 = v1Map[v0.id];
+    if (v1) {
+      interpVehicles.push({
+        ...v0,
+        x: v0.x + (v1.x - v0.x) * t,
+        y: v0.y + (v1.y - v0.y) * t,
+        lateral_offset: (v0.lateral_offset || 0) + ((v1.lateral_offset || 0) - (v0.lateral_offset || 0)) * t,
+        speed: v0.speed + (v1.speed - v0.speed) * t,
+      });
+    } else {
+      interpVehicles.push(v0);
+    }
+  }
+
+  // Interpolate scalar metrics
+  const m0 = f0.metrics || {};
+  const m1 = f1.metrics || {};
+  const interpMetrics = {};
+  for (const key of Object.keys(m0)) {
+    if (typeof m0[key] === 'number' && typeof m1[key] === 'number') {
+      interpMetrics[key] = m0[key] + (m1[key] - m0[key]) * t;
+    } else {
+      interpMetrics[key] = t < 0.5 ? m0[key] : m1[key];
+    }
+  }
+
+  // Interpolate barrier state (smooth transition)
+  const barrier0 = f0.barrier_closed ? 1 : 0;
+  const barrier1 = f1.barrier_closed ? 1 : 0;
+  const barrierInterp = barrier0 + (barrier1 - barrier0) * t;
+
+  return {
+    time: f0.time + (f1.time - f0.time) * t,
+    barrier_closed: barrierInterp > 0.5,
+    barrier_value: barrierInterp, // for smooth animation
+    vehicles: interpVehicles,
+    metrics: interpMetrics,
+  };
+}
+
+function getTotalFrames() {
+  return state.data?.frames?.length || 0;
+}
+
+function getMaxTime() {
+  const f = state.data?.frames;
+  return f && f.length ? f[f.length - 1].time : 0;
+}
+
+// ================================================================
+//  Playback
+// ================================================================
+function startPlayback() {
+  if (state.playing) return;
+  state.playing = true;
+  state.fractionalFrame = state.frameIndex; // sync from current position
+  btnPlay.textContent = '\u23f8';
+  lastTick = performance.now();
+  tick();
+}
+
+function stopPlayback() {
+  state.playing = false;
+  btnPlay.textContent = '\u25b6';
+  if (animFrame) cancelAnimationFrame(animFrame);
+}
+
+function tick() {
+  if (!state.playing) return;
+  const now = performance.now();
+  const dt = (now - lastTick) / 1000; // seconds since last tick
+  lastTick = now;
+
+  // Advance fractional frame based on speed
+  // Base rate: 2 frames per second (500ms per frame)
+  const framesPerSecond = 2 * state.speed;
+  state.fractionalFrame += dt * framesPerSecond;
+
+  const maxFrames = getTotalFrames();
+  if (state.fractionalFrame >= maxFrames - 1) {
+    state.fractionalFrame = maxFrames - 1;
+    state.frameIndex = maxFrames - 1;
+    stopPlayback();
+    render();
+    updateScrubber();
+    return;
+  }
+
+  // Sync integer frame index for scrubber display
+  state.frameIndex = Math.floor(state.fractionalFrame);
+
+  render();
+  updateScrubber();
+  animFrame = requestAnimationFrame(tick);
+}
+
+function updateScrubber() {
+  const maxFrames = getTotalFrames();
+  if (!maxFrames) return;
+  scrubber.max = maxFrames - 1;
+  scrubber.value = state.frameIndex;
+  const frame = state.playing
+    ? getInterpolatedFrame(state.data, state.fractionalFrame)
+    : getCurrentFrame();
+  const maxTime = getMaxTime();
+  timeDisplay.textContent = `${(frame?.time || 0).toFixed(1)}s / ${maxTime.toFixed(1)}s`;
+}
+
+function seekToFrame(index) {
+  state.frameIndex = Math.max(0, Math.min(index, getTotalFrames() - 1));
+  state.fractionalFrame = state.frameIndex;
+  render();
+  updateScrubber();
+}
+
+// ================================================================
+//  Data Loading
+// ================================================================
+async function loadIndex() {
+  try {
+    const resp = await fetch('data/index.json');
+    if (!resp.ok) return;
+    state.scenarios = (await resp.json()).scenarios || {};
+    populateScenarioSelect();
+  } catch {
+    // fetch failed (likely file:// protocol) — hint via empty state
+    emptyState.querySelector('p').innerHTML =
+      'Use <strong>Load Files</strong> below to open exported JSON files, ' +
+      'or drag them onto this area.<br><br>' +
+      'To use the dropdowns automatically, serve via:<br>' +
+      '<code>python -m http.server 8000 -d docs/visualizer</code>';
+  }
+}
+
+function populateScenarioSelect() {
+  scenarioSelect.innerHTML = '<option value="">Select scenario...</option>';
+  for (const scenario of Object.keys(state.scenarios).sort()) {
+    const opt = document.createElement('option');
+    opt.value = scenario;
+    opt.textContent = scenario.replace(/_/g, ' ');
+    scenarioSelect.appendChild(opt);
+  }
+}
+
+function populatePolicySelect(policies) {
+  policySelect.innerHTML = '<option value="">Select policy...</option>';
+  policySelect2.innerHTML = '<option value="">Compare with...</option>';
+  for (const p of policies) {
+    const opt1 = document.createElement('option');
+    opt1.value = p;
+    opt1.textContent = p.replace(/_/g, ' ');
+    policySelect.appendChild(opt1);
+
+    const opt2 = opt1.cloneNode(true);
+    policySelect2.appendChild(opt2);
+  }
+}
+
+async function loadPolicyData(scenario, policy) {
+  // Check in-memory cache first (from file input)
+  if (state.fileData) {
+    const cached = state.fileData[`${scenario}\t${policy}`];
+    if (cached) return cached;
+  }
+  const filename = `${scenario}_${policy.replace(/\s+/g, '_').toLowerCase()}.json`;
+  try {
+    const resp = await fetch(`data/${filename}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch {
+    try {
+      const resp2 = await fetch(`data/${scenario}/${filename}`);
+      if (!resp2.ok) throw new Error(`HTTP ${resp2.status}`);
+      return await resp2.json();
+    } catch {
+      return null;
+    }
+  }
+}
+
+// ================================================================
+//  Speed Slider
+// ================================================================
+const SPEED_STEPS = [0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5];
+
+function updateSpeedFromSlider() {
+  const idx = parseInt(speedSlider.value, 10);
+  state.speed = SPEED_STEPS[idx];
+  speedLabel.textContent = state.speed + 'x';
+}
+
+// ================================================================
+//  Event Handlers
+// ================================================================
+btnPlay.addEventListener('click', () => {
+  state.playing ? stopPlayback() : startPlayback();
+});
+
+speedSlider.addEventListener('input', updateSpeedFromSlider);
+
+// Road size slider (visual only, does not affect simulation)
+roadSizeSlider.addEventListener('input', () => {
+  const val = parseInt(roadSizeSlider.value, 10);
+  state.roadScale = val / 10;
+  roadSizeLabel.textContent = state.roadScale.toFixed(1) + 'x';
+  render();
+});
+
+// Vehicle size slider
+vehicleSizeSlider.addEventListener('input', () => {
+  const val = parseInt(vehicleSizeSlider.value, 10);
+  state.vehicleScale = val / 10;
+  vehicleSizeLabel.textContent = state.vehicleScale.toFixed(1) + 'x';
+  render();
+});
+
+$('#btnStepBack').addEventListener('click', () => {
+  stopPlayback();
+  const idx = Math.max(0, state.frameIndex - 1);
+  state.frameIndex = idx;
+  state.fractionalFrame = idx;
+  render();
+  updateScrubber();
+});
+
+$('#btnStepFwd').addEventListener('click', () => {
+  stopPlayback();
+  const idx = Math.min(getTotalFrames() - 1, state.frameIndex + 1);
+  state.frameIndex = idx;
+  state.fractionalFrame = idx;
+  render();
+  updateScrubber();
+});
+
+scrubber.addEventListener('input', () => {
+  stopPlayback();
+  const idx = parseInt(scrubber.value, 10);
+  state.frameIndex = idx;
+  state.fractionalFrame = idx;
+  render();
+  updateScrubber();
+});
+
+debugToggle.addEventListener('change', () => {
+  state.showDebug = debugToggle.checked;
+  render();
+});
+
+scenarioSelect.addEventListener('change', async () => {
+  const scenario = scenarioSelect.value;
+  if (!scenario) return;
+  stopPlayback();
+  state.data = null;
+  state.data2 = null;
+  state.frameIndex = 0;
+
+  const policies = state.scenarios[scenario] || [];
+  populatePolicySelect(policies);
+
+  if (policies.length > 0) {
+    policySelect.value = policies[0];
+    await loadAndRender(scenario, policies[0]);
+  }
+});
+
+policySelect.addEventListener('change', async () => {
+  const scenario = scenarioSelect.value;
+  const policy = policySelect.value;
+  if (!scenario || !policy) return;
+  stopPlayback();
+  state.frameIndex = 0;
+  await loadAndRender(scenario, policy);
+});
+
+policySelect2.addEventListener('change', async () => {
+  if (!state.compareMode) return;
+  const scenario = scenarioSelect.value;
+  const policy = policySelect2.value;
+  if (!scenario || !policy) {
+    state.data2 = null;
+    createCanvasPanels(1);
+    render();
+    return;
+  }
+  state.data2 = await loadPolicyData(scenario, policy);
+  if (state.data2 && canvases.length < 2) {
+    createCanvasPanels(2);
+  }
+  render();
+});
+
+btnCompare.addEventListener('click', () => {
+  state.compareMode = !state.compareMode;
+  btnCompare.classList.toggle('active', state.compareMode);
+  policySelect2.style.display = state.compareMode ? '' : 'none';
+
+  if (state.compareMode) {
+    createCanvasPanels(2);
+    if (policySelect2.value) {
+      policySelect2.dispatchEvent(new Event('change'));
+    }
+  } else {
+    state.data2 = null;
+    createCanvasPanels(1);
+    render();
+  }
+});
+
+async function loadAndRender(scenario, policy) {
+  const data = await loadPolicyData(scenario, policy);
+  if (!data) {
+    emptyState.style.display = '';
+    emptyState.querySelector('h2').textContent = 'Data file not found';
+    emptyState.querySelector('p').textContent = `Could not load data/${scenario}_${policy.replace(/\s+/g, '_').toLowerCase()}.json`;
+    return;
+  }
+  state.data = data;
+  state.frameIndex = 0;
+  state.fractionalFrame = 0;
+  state.train.active = false;
+  state.train.numCars = 1;
+  state.train.generationDone = false;
+  state.train.elapsedTime = 0;
+  state.train.genTimer = 0;
+  state.collisions = [];
+  if (!canvases.length) createCanvasPanels(state.compareMode ? 2 : 1);
+  render();
+  updateScrubber();
+}
+
+// ================================================================
+//  Keyboard Shortcuts
+// ================================================================
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  switch (e.code) {
+    case 'Space':
+      e.preventDefault();
+      state.playing ? stopPlayback() : startPlayback();
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      stopPlayback();
+      seekToFrame(state.frameIndex - 1);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      stopPlayback();
+      seekToFrame(state.frameIndex + 1);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      speedSlider.value = Math.min(7, parseInt(speedSlider.value) + 1);
+      updateSpeedFromSlider();
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      speedSlider.value = Math.max(0, parseInt(speedSlider.value) - 1);
+      updateSpeedFromSlider();
+      break;
+    case 'KeyD':
+      debugToggle.checked = !debugToggle.checked;
+      state.showDebug = debugToggle.checked;
+      render();
+      break;
+    case 'Home':
+      e.preventDefault();
+      stopPlayback();
+      seekToFrame(0);
+      break;
+    case 'End':
+      e.preventDefault();
+      stopPlayback();
+      seekToFrame(getTotalFrames() - 1);
+      break;
+  }
+});
+
+// ================================================================
+//  File Input
+// ================================================================
+const fileInput = document.getElementById('fileInput');
+if (fileInput) {
+fileInput.addEventListener('change', async (e) => {
+  const files = [...e.target.files].filter(f => f.name.endsWith('.json'));
+  if (!files.length) return;
+
+  stopPlayback();
+  let firstData = null;
+
+  for (const file of files) {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.frames) continue;
+
+      // Register in scenario index
+      const scenario = data.scenario || file.name.split('_')[0];
+      const baseName = file.name.replace('.json', '');
+      const policy = data.policy || baseName.slice(baseName.indexOf('_') + 1);
+      if (!state.scenarios[scenario]) state.scenarios[scenario] = [];
+      if (!state.scenarios[scenario].includes(policy)) {
+        state.scenarios[scenario].push(policy);
+      }
+      // Store data keyed by scenario+policy for dropdown loading
+      if (!state.fileData) state.fileData = {};
+      state.fileData[`${scenario}\t${policy}`] = data;
+
+      if (!firstData) firstData = data;
+    } catch (err) {
+      console.warn('Skipping invalid file:', file.name, err.message);
+    }
+  }
+
+  // Rebuild dropdowns
+  populateScenarioSelect();
+  if (firstData) {
+    if (firstData.scenario) scenarioSelect.value = firstData.scenario;
+    const policies = state.scenarios[firstData.scenario] || [];
+    populatePolicySelect(policies);
+    if (firstData.policy) policySelect.value = firstData.policy;
+
+    state.data = firstData;
+    state.frameIndex = 0;
+    state.fractionalFrame = 0;
+    if (!canvases.length) createCanvasPanels(1);
+    render();
+    updateScrubber();
+    emptyState.style.display = 'none';
+  }
+
+  fileInput.value = '';
+});
+} else {
+  console.warn('fileInput element not found');
+}
+
+// ================================================================
+//  Drag & Drop
+// ================================================================
+canvasArea.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+canvasArea.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.json')) return;
+  const text = await file.text();
+  try {
+    const data = JSON.parse(text);
+    if (!data.frames) throw new Error('No frames in data');
+    stopPlayback();
+
+    // Register in scenario index
+    const scenario = data.scenario || file.name.split('_')[0];
+    const baseName = file.name.replace('.json', '');
+    const policy = data.policy || baseName.slice(baseName.indexOf('_') + 1);
+    if (!state.scenarios[scenario]) state.scenarios[scenario] = [];
+    if (!state.scenarios[scenario].includes(policy)) {
+      state.scenarios[scenario].push(policy);
+    }
+    if (!state.fileData) state.fileData = {};
+    state.fileData[`${scenario}\t${policy}`] = data;
+
+  state.collisions = []; // clear old collision effects
+  state.data = data;
+    state.frameIndex = 0;
+    if (!canvases.length) createCanvasPanels(1);
+    render();
+    updateScrubber();
+    emptyState.style.display = 'none';
+
+    // Rebuild dropdowns
+    populateScenarioSelect();
+    scenarioSelect.value = scenario;
+    populatePolicySelect(state.scenarios[scenario]);
+    policySelect.value = policy;
+  } catch (err) {
+    alert(`Invalid JSON file: ${err.message}`);
+  }
+});
+
+// ================================================================
+//  Init
+// ================================================================
+updateSpeedFromSlider();
+loadIndex();
+</script>
+</body>
+</html>
