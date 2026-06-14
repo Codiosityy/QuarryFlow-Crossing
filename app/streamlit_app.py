@@ -24,7 +24,7 @@ from quarryflow.dashboard_data import (  # noqa: E402
     run_policy_suite,
     vehicle_frame,
 )
-from quarryflow.hybrid import load_hybrid_controller  # noqa: E402
+
 from quarryflow.model import SurrogateModel  # noqa: E402
 from quarryflow.reporting import build_assumptions_markdown, build_pitch_markdown  # noqa: E402
 from quarryflow.scenarios import build_scenario  # noqa: E402

@@ -36,7 +36,7 @@ def _markdown_table(frame: pd.DataFrame) -> str:
 
 
 def _adaptive_label(results: dict) -> str:
-    for candidate in ("Hybrid Adaptive", "Legacy Adaptive", "Adaptive Staged Release"):
+    for candidate in ("MCTS Rollout", "Hybrid Adaptive", "Legacy Adaptive", "Adaptive Staged Release"):
         if candidate in results:
             return candidate
     raise KeyError("No adaptive-style policy found in results.")

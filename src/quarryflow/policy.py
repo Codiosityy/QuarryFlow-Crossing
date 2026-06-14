@@ -13,7 +13,7 @@ from .domain_types import (
     RIGHT,
     ScenarioConfig,
 )
-from .hybrid import LinUCBResidual, StateVectorBuilder
+from .hybrid import StateVectorBuilder
 
 
 def _opposite(side: str) -> str:
