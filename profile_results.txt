@@ -1,0 +1,58 @@
+         45016119 function calls (44749467 primitive calls) in 50.546 seconds
+
+   Ordered by: internal time
+   List reduced from 722 to 50 due to restriction <50>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    20112    9.195    0.000   13.435    0.001 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:575(_move_side)
+    52565    2.651    0.000    4.359    0.000 {built-in method builtins.sorted}
+   112161    2.077    0.000    4.162    0.000 {built-in method builtins.sum}
+  5646962    1.532    0.000    1.591    0.000 {built-in method builtins.min}
+4431366/4430939    1.511    0.000    2.212    0.000 {built-in method builtins.isinstance}
+  5307308    1.370    0.000    1.370    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:733(<lambda>)
+  2234986    1.032    0.000    1.272    0.000 {built-in method builtins.max}
+  1818258    0.985    0.000    1.133    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\behaviors.py:60(update_lateral_offset)
+    10186    0.966    0.000   10.293    0.001 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:241(build_snapshot)
+   153720    0.782    0.000    2.962    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sklearn\utils\validation.py:681(_pandas_dtype_needs_early_conversion)
+    34587    0.781    0.000    5.939    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\series.py:392(__init__)
+     3843    0.691    0.000    2.885    0.001 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sklearn\ensemble\_gb.py:970(_raw_predict)
+     7686    0.606    0.000   14.843    0.002 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sklearn\utils\validation.py:725(check_array)
+    28610    0.568    0.000    3.969    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:730(_active_vehicles)
+  2259051    0.562    0.000    0.562    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:701(<genexpr>)
+   465003    0.558    0.000    0.919    0.000 <frozen importlib._bootstrap>:1398(_handle_fromlist)
+  1016448    0.538    0.000    5.183    0.000 {built-in method builtins.hasattr}
+    54229    0.535    0.000    1.528    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\construction.py:517(sanitize_array)
+    10186    0.534    0.000    1.437    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\behaviors.py:155(idling_snapshot)
+887342/646388    0.431    0.000    0.566    0.000 {built-in method builtins.len}
+  1851400    0.429    0.000    0.429    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:259(<genexpr>)
+    30744    0.386    0.000    1.010    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\dtypes\common.py:1606(pandas_dtype)
+    20835    0.371    0.000    0.371    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+    20378    0.366    0.000    0.419    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:694(_queue_length)
+  1803799    0.364    0.000    0.364    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\behaviors.py:150(<genexpr>)
+   103334    0.332    0.000    0.881    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\generic.py:6323(__setattr__)
+815631/811788    0.332    0.000    0.547    0.000 {built-in method builtins.getattr}
+  1818258    0.328    0.000    0.328    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:578(<lambda>)
+     3843    0.319    0.000   18.628    0.005 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sklearn\utils\parallel.py:140(__call__)
+   153720    0.304    0.000    0.914    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\dtypes\common.py:1200(is_bool_dtype)
+    10186    0.301    0.000    1.106    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\behaviors.py:131(wrong_side_queue_share)
+    51667    0.294    0.000    0.315    0.000 {built-in method numpy.array}
+    54229    0.288    0.000    0.347    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\generic.py:281(__init__)
+53802/46116    0.282    0.000    2.223    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\generic.py:6306(__getattr__)
+     3843    0.262    0.000    0.478    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\algorithms.py:1667(map_array)
+     7686    0.253    0.000    0.825    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\sklearn\utils\validation.py:103(_assert_all_finite)
+   349713    0.251    0.000    0.573    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\dtypes\generic.py:42(_instancecheck)
+    34587    0.247    0.000    0.794    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\managers.py:1882(from_array)
+10056/5760    0.241    0.000   50.501    0.009 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:185(step)
+  1630274    0.240    0.000    0.240    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\simulator.py:724(<lambda>)
+    45689    0.233    0.000    0.293    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\indexes\base.py:5335(__contains__)
+   349713    0.232    0.000    0.321    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\dtypes\generic.py:37(_check)
+    84547    0.214    0.000    0.369    0.000 C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.3824.0_x64__qbz5n2kfra8p0\Lib\warnings.py:188(_add_filter)
+    10186    0.208    0.000    0.220    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\behaviors.py:87(bike_infiltration_score)
+    30744    0.207    0.000    6.244    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\generic.py:6454(dtypes)
+    10186    0.206    0.000    0.277    0.000 C:\Games\QuarryFlow-Crossing\src\quarryflow\behaviors.py:175(mean_reaction_time)
+    34587    0.204    0.000    0.299    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\blocks.py:2789(new_block)
+55083/47397    0.202    0.000    0.507    0.000 {built-in method numpy.asarray}
+    23058    0.189    0.000    0.263    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\generic.py:6258(__finalize__)
+    30744    0.187    0.000    0.545    0.000 C:\Users\kladd\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\managers.py:287(get_dtypes)
+
+

@@ -89,7 +89,17 @@ class RailwayCrossingSimulator:
         self.actions_taken = []
         self.decision_traces = []
 
-        cloned = copy.deepcopy(self)
+        import copy
+        cloned = copy.copy(self)
+        
+        # Manually copy mutable nested states to avoid the extreme overhead of deepcopy
+        cloned.vehicles = {
+            LEFT: [v.clone() for v in self.vehicles[LEFT]],
+            RIGHT: [v.clone() for v in self.vehicles[RIGHT]],
+        }
+        cloned.completed_vehicles = [copy.copy(v) for v in self.completed_vehicles]
+        cloned.clearance_durations = list(self.clearance_durations)
+        cloned.vehicles_cleared_by_side = self.vehicles_cleared_by_side.copy()
 
         self.history = saved_history
         self.snapshots = saved_snapshots
@@ -149,13 +159,10 @@ class RailwayCrossingSimulator:
             steps += 1
 
         elapsed = max(end_time - self.time, clone.config.time_step)
-        avg_wait_proxy = queue_integral / max(steps, 1)
+        actual_avg_wait = clone._build_result().metrics.average_waiting_time
         throughput = (clone.vehicles_cleared - initial_cleared) / elapsed * 3600.0
         newly_cleared = max(clone.vehicles_cleared - initial_cleared, 0)
-        fairness_gap_horizon = (
-            abs((clone.vehicles_cleared_by_side[LEFT] - initial_left) - (clone.vehicles_cleared_by_side[RIGHT] - initial_right))
-            / max(newly_cleared, 1)
-        )
+        fairness_gap_horizon = clone._build_result().metrics.fairness_gap
         new_clearances = clone.clearance_durations[initial_clearance_count:]
         if new_clearances:
             mean_clearance = sum(new_clearances) / len(new_clearances)
@@ -164,13 +171,13 @@ class RailwayCrossingSimulator:
             mean_clearance = elapsed
             worst_clearance = elapsed
         return HorizonOutcome(
-            average_waiting_time=avg_wait_proxy,
+            average_waiting_time=actual_avg_wait,
             throughput=throughput,
             max_congestion_length=max_congestion,
             occupancy_risk_horizon=max_occupancy_risk,
             fairness_gap_horizon=fairness_gap_horizon,
             wrong_side_queue_share_horizon=max_wrong_side,
-            idling_fuel_liters_horizon=max(0.0, clone.total_idling_fuel_liters - initial_idling_fuel),
+            idling_fuel_liters_horizon=max(0.0, clone.total_idling_fuel_liters - initial_idling_fuel) * (3600.0 / elapsed),
             mean_clearance_time_horizon=mean_clearance,
             worst_clearance_time_horizon=worst_clearance,
         )

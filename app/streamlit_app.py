@@ -229,7 +229,7 @@ st.markdown("""
   <div class="tag-row">
     <span class="tag-chip">🧪 Microsimulation</span>
     <span class="tag-chip">🧠 ML Surrogate</span>
-    <span class="tag-chip">🎰 LinUCB Bandit</span>
+    <span class="tag-chip">🌲 Monte Carlo Search</span>
     <span class="tag-chip">🛡️ Safety Shield</span>
     <span class="tag-chip">📊 Counterfactual</span>
   </div>
@@ -485,7 +485,7 @@ with tabs[2]:
                     cr = chosen.iloc[0]
                     st.markdown(metric_card("✅ Chosen", str(cr["chosen_action"]),
                                             f"score: {num(float(cr['score']))}",
-                                            f"bandit: {num(float(cr['linucb_bonus']))} · σ: {num(float(cr['utility_std']))}"),
+                                            f"utility: {num(float(cr.get('base_utility', 0)))}"),
                                 unsafe_allow_html=True)
                 if not alt.empty:
                     ar = alt.sort_values("score", ascending=False).iloc[0]

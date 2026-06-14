@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 
 from .domain_types import PolicyAction, CrossingStateSnapshot
 from .simulator import RailwayCrossingSimulator
-from .policy import AdaptivePolicy
+from .policy import AdaptivePolicy, _priority_adjustment
 
 class FixedActionPolicy:
     """A simple policy that always returns the same action. Used during rollouts."""
@@ -25,7 +25,7 @@ class MCTSRolloutPolicy:
     def __init__(
         self,
         model=None,
-        rollout_duration_seconds: float = 10.0,  # K: how far into the future to look
+        rollout_duration_seconds: float = 4.0,  # K: how far into the future to look
         rollouts_per_action: int = 1,            # M: how many stochastic rollouts to average
         w_wait: float = 1.0,                     # Weight for average wait time
         w_queue: float = 2.0,                    # Weight for max congestion
@@ -54,19 +54,19 @@ class MCTSRolloutPolicy:
         Calculates the fitness score of a future horizon.
         Higher score is better (hence the negative sign for penalties).
         """
-        return -(
-            self.w_wait * outcome.average_waiting_time +
-            self.w_queue * outcome.max_congestion_length +
-            self.w_fairness * outcome.fairness_gap_horizon
-        )
+        # We reuse the carefully tuned AdaptivePolicyConfig reward function!
+        return self.heuristic_filter.config.reward(outcome)
 
     def decide(self, simulator: RailwayCrossingSimulator) -> PolicyAction:
+        self.ttable.clear() # Clear cache for each new decision step!
         snapshot = simulator.build_snapshot()
         candidate_names = self.heuristic_filter._rollout_candidates(simulator, snapshot)
         
         # If the heuristic only returns 1 valid action, skip the rollout entirely!
         if len(candidate_names) == 1:
             name = list(candidate_names)[0]
+            import logging
+            logging.debug(f"[MCTS] Time {simulator.time:.1f} | Candidates: {candidate_names} | Chosen instantly: {name}")
             return next(a for a in simulator.config.actions if a.name == name)
 
         best_score = -float('inf')
@@ -86,22 +86,44 @@ class MCTSRolloutPolicy:
             else:
                 total_score = 0.0
                 for _ in range(self.M):
-                    clone = simulator.clone()
-                    # Run the clone forward in time using this specific action
-                    outcome = clone.evaluate_horizon(
+                    # Run the simulator forward in time using this specific action
+                    # evaluate_horizon creates its own clone internally to prevent mutation
+                    outcome = simulator.evaluate_horizon(
                         duration=self.rollout_duration,
                         policy=FixedActionPolicy(action)
                     )
                     total_score += self._score_outcome(outcome)
                 
-                # Average the stochastic rollouts
-                score = total_score / self.M
+                # Average the stochastic rollouts and apply priority penalty
+                score = (total_score / self.M) + _priority_adjustment(action, snapshot, self.heuristic_filter.config)
                 self.ttable[state_hash] = score
                 
             # Keep track of the best action
             if score > best_score:
                 best_score = score
                 best_action = action
+
+        import logging
+        logging.debug(f"[MCTS] Time {simulator.time:.1f} | Candidates: {candidate_names} | Chosen via MCTS Rollout: {best_action.name} (Score: {best_score:.2f})")
+
+        if hasattr(simulator, "record_decision_trace"):
+            from .domain_types import DecisionTrace
+            from .hybrid import StateVectorBuilder
+            
+            # Format the scores into the trace format expected by Streamlit
+            scored_actions = []
+            for h, s in self.ttable.items():
+                # We can approximate the trace to just the best score info if needed
+                pass
+                
+            simulator.record_decision_trace(
+                DecisionTrace(
+                    time=round(snapshot.time, 2),
+                    chosen_action=best_action.name,
+                    state_summary=StateVectorBuilder.state_summary(snapshot),
+                    action_scores=[{"action": best_action.name, "score": round(best_score, 3), "base_utility": 0, "veto_reason": None}]
+                )
+            )
 
         # Clear Transposition table periodically to prevent memory leaks if needed,
         # but for a 10-minute episode, keeping it is fine.

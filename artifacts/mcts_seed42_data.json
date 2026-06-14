@@ -1,0 +1,1510 @@
+[
+  {
+    "time": 8.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 8.0,
+      "time_since_open": 8.0,
+      "queue_left": 95.63,
+      "queue_right": 97.9,
+      "queue_count_left": 5,
+      "queue_count_right": 3,
+      "disorder_index": 0.0,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.18,
+      "occupancy_risk": 0.0,
+      "pressure_imbalance": -0.012,
+      "current_action": "free_release"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -266.496,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 16.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 16.0,
+      "time_since_open": 16.0,
+      "queue_left": 103.61,
+      "queue_right": 98.02,
+      "queue_count_left": 5,
+      "queue_count_right": 6,
+      "disorder_index": 0.046,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.248,
+      "occupancy_risk": 0.369,
+      "pressure_imbalance": 0.028,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 666.061,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 24.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 24.0,
+      "time_since_open": 24.0,
+      "queue_left": 80.68,
+      "queue_right": 78.34,
+      "queue_count_left": 6,
+      "queue_count_right": 8,
+      "disorder_index": 0.159,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.315,
+      "occupancy_risk": 0.032,
+      "pressure_imbalance": 0.015,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 1379.993,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 32.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 32.0,
+      "time_since_open": 32.0,
+      "queue_left": 98.94,
+      "queue_right": 8.32,
+      "queue_count_left": 7,
+      "queue_count_right": 3,
+      "disorder_index": 0.208,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.225,
+      "occupancy_risk": 0.402,
+      "pressure_imbalance": 0.845,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 1834.894,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 40.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 40.0,
+      "time_since_open": 40.0,
+      "queue_left": 22.23,
+      "queue_right": 68.99,
+      "queue_count_left": 3,
+      "queue_count_right": 4,
+      "disorder_index": 0.206,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.158,
+      "occupancy_risk": 0.221,
+      "pressure_imbalance": -0.513,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 1716.624,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 48.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 48.0,
+      "time_since_open": 48.0,
+      "queue_left": 51.2,
+      "queue_right": 106.91,
+      "queue_count_left": 2,
+      "queue_count_right": 8,
+      "disorder_index": 0.067,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.225,
+      "occupancy_risk": 0.193,
+      "pressure_imbalance": -0.352,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 396.152,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 56.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 56.0,
+      "time_since_open": 56.0,
+      "queue_left": 83.67,
+      "queue_right": 84.07,
+      "queue_count_left": 4,
+      "queue_count_right": 9,
+      "disorder_index": 0.145,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.293,
+      "occupancy_risk": 0.209,
+      "pressure_imbalance": -0.002,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 592.745,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 64.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 64.0,
+      "time_since_open": 64.0,
+      "queue_left": 101.45,
+      "queue_right": 40.63,
+      "queue_count_left": 8,
+      "queue_count_right": 7,
+      "disorder_index": 0.248,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.338,
+      "occupancy_risk": 0.23,
+      "pressure_imbalance": 0.428,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 856.378,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 155.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 155.0,
+      "time_since_open": 0.0,
+      "queue_left": 164.66,
+      "queue_right": 157.44,
+      "queue_count_left": 37,
+      "queue_count_right": 38,
+      "disorder_index": 0.316,
+      "wrong_side_queue_share": 0.257,
+      "closure_frustration_index": 0.548,
+      "occupancy_risk": 0.457,
+      "pressure_imbalance": 0.022,
+      "current_action": "free_release"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 19.139,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 163.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 163.0,
+      "time_since_open": 8.0,
+      "queue_left": 161.04,
+      "queue_right": 166.04,
+      "queue_count_left": 34,
+      "queue_count_right": 40,
+      "disorder_index": 0.263,
+      "wrong_side_queue_share": 0.36,
+      "closure_frustration_index": 0.522,
+      "occupancy_risk": 0.114,
+      "pressure_imbalance": -0.015,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 892.093,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 171.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 171.0,
+      "time_since_open": 16.0,
+      "queue_left": 140.99,
+      "queue_right": 187.83,
+      "queue_count_left": 31,
+      "queue_count_right": 45,
+      "disorder_index": 0.149,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.03,
+      "pressure_imbalance": -0.142,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 1052.382,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 179.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 179.0,
+      "time_since_open": 24.0,
+      "queue_left": 145.74,
+      "queue_right": 185.8,
+      "queue_count_left": 31,
+      "queue_count_right": 45,
+      "disorder_index": 0.268,
+      "wrong_side_queue_share": 0.257,
+      "closure_frustration_index": 0.501,
+      "occupancy_risk": 0.277,
+      "pressure_imbalance": -0.121,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 1052.382,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 187.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 187.0,
+      "time_since_open": 32.0,
+      "queue_left": 150.86,
+      "queue_right": 187.93,
+      "queue_count_left": 33,
+      "queue_count_right": 45,
+      "disorder_index": 0.25,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.23,
+      "pressure_imbalance": -0.109,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 232.785,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 195.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 195.0,
+      "time_since_open": 40.0,
+      "queue_left": 152.1,
+      "queue_right": 196.93,
+      "queue_count_left": 35,
+      "queue_count_right": 46,
+      "disorder_index": 0.298,
+      "wrong_side_queue_share": 0.257,
+      "closure_frustration_index": 0.501,
+      "occupancy_risk": 0.283,
+      "pressure_imbalance": -0.128,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 530.286,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 203.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 203.0,
+      "time_since_open": 48.0,
+      "queue_left": 178.6,
+      "queue_right": 205.83,
+      "queue_count_left": 39,
+      "queue_count_right": 48,
+      "disorder_index": 0.201,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.22,
+      "pressure_imbalance": -0.071,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 882.332,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 211.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 211.0,
+      "time_since_open": 56.0,
+      "queue_left": 182.75,
+      "queue_right": 216.79,
+      "queue_count_left": 41,
+      "queue_count_right": 50,
+      "disorder_index": 0.241,
+      "wrong_side_queue_share": 0.3,
+      "closure_frustration_index": 0.51,
+      "occupancy_risk": 0.279,
+      "pressure_imbalance": -0.085,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 637.27,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 219.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 219.0,
+      "time_since_open": 64.0,
+      "queue_left": 189.43,
+      "queue_right": 229.9,
+      "queue_count_left": 41,
+      "queue_count_right": 52,
+      "disorder_index": 0.207,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.221,
+      "pressure_imbalance": -0.097,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 797.293,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 227.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 227.0,
+      "time_since_open": 72.0,
+      "queue_left": 191.8,
+      "queue_right": 238.77,
+      "queue_count_left": 44,
+      "queue_count_right": 54,
+      "disorder_index": 0.211,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.222,
+      "pressure_imbalance": -0.109,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 410.887,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 235.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 235.0,
+      "time_since_open": 80.0,
+      "queue_left": 204.01,
+      "queue_right": 249.13,
+      "queue_count_left": 45,
+      "queue_count_right": 56,
+      "disorder_index": 0.198,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.22,
+      "pressure_imbalance": -0.1,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 889.794,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 243.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 243.0,
+      "time_since_open": 88.0,
+      "queue_left": 205.87,
+      "queue_right": 230.56,
+      "queue_count_left": 48,
+      "queue_count_right": 52,
+      "disorder_index": 0.287,
+      "wrong_side_queue_share": 0.3,
+      "closure_frustration_index": 0.51,
+      "occupancy_risk": 0.288,
+      "pressure_imbalance": -0.057,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 632.42,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 360.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 360.0,
+      "time_since_open": 0.0,
+      "queue_left": 390.2,
+      "queue_right": 446.58,
+      "queue_count_left": 89,
+      "queue_count_right": 100,
+      "disorder_index": 0.29,
+      "wrong_side_queue_share": 0.225,
+      "closure_frustration_index": 0.542,
+      "occupancy_risk": 0.446,
+      "pressure_imbalance": -0.067,
+      "current_action": "free_release"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -1004.71,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 368.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 368.0,
+      "time_since_open": 8.0,
+      "queue_left": 413.02,
+      "queue_right": 463.23,
+      "queue_count_left": 88,
+      "queue_count_right": 103,
+      "disorder_index": 0.175,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.395,
+      "pressure_imbalance": -0.057,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -105.636,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 376.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 376.0,
+      "time_since_open": 16.0,
+      "queue_left": 391.59,
+      "queue_right": 475.02,
+      "queue_count_left": 83,
+      "queue_count_right": 104,
+      "disorder_index": 0.235,
+      "wrong_side_queue_share": 0.3,
+      "closure_frustration_index": 0.51,
+      "occupancy_risk": 0.458,
+      "pressure_imbalance": -0.096,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 602.445,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 384.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 384.0,
+      "time_since_open": 24.0,
+      "queue_left": 375.02,
+      "queue_right": 477.52,
+      "queue_count_left": 85,
+      "queue_count_right": 105,
+      "disorder_index": 0.19,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.038,
+      "pressure_imbalance": -0.12,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -55.444,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 392.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 392.0,
+      "time_since_open": 32.0,
+      "queue_left": 381.48,
+      "queue_right": 475.57,
+      "queue_count_left": 85,
+      "queue_count_right": 106,
+      "disorder_index": 0.233,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.047,
+      "pressure_imbalance": -0.11,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -661.664,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 400.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 400.0,
+      "time_since_open": 40.0,
+      "queue_left": 384.57,
+      "queue_right": 481.22,
+      "queue_count_left": 86,
+      "queue_count_right": 107,
+      "disorder_index": 0.21,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.222,
+      "pressure_imbalance": -0.112,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -409.857,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 408.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 408.0,
+      "time_since_open": 48.0,
+      "queue_left": 385.49,
+      "queue_right": 500.99,
+      "queue_count_left": 85,
+      "queue_count_right": 111,
+      "disorder_index": 0.196,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.219,
+      "pressure_imbalance": -0.13,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 100.437,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 416.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 416.0,
+      "time_since_open": 56.0,
+      "queue_left": 399.67,
+      "queue_right": 490.27,
+      "queue_count_left": 88,
+      "queue_count_right": 105,
+      "disorder_index": 0.187,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.217,
+      "pressure_imbalance": -0.102,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 591.724,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 424.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 424.0,
+      "time_since_open": 64.0,
+      "queue_left": 406.95,
+      "queue_right": 490.54,
+      "queue_count_left": 87,
+      "queue_count_right": 108,
+      "disorder_index": 0.157,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.391,
+      "pressure_imbalance": -0.093,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 737.381,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 432.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 432.0,
+      "time_since_open": 72.0,
+      "queue_left": 409.39,
+      "queue_right": 484.32,
+      "queue_count_left": 89,
+      "queue_count_right": 108,
+      "disorder_index": 0.157,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.391,
+      "pressure_imbalance": -0.084,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -99.042,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 440.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 440.0,
+      "time_since_open": 80.0,
+      "queue_left": 397.61,
+      "queue_right": 495.44,
+      "queue_count_left": 88,
+      "queue_count_right": 111,
+      "disorder_index": 0.255,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.051,
+      "pressure_imbalance": -0.11,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -533.763,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 448.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 448.0,
+      "time_since_open": 88.0,
+      "queue_left": 406.57,
+      "queue_right": 502.7,
+      "queue_count_left": 86,
+      "queue_count_right": 112,
+      "disorder_index": 0.236,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.227,
+      "pressure_imbalance": -0.106,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 691.319,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 456.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 456.0,
+      "time_since_open": 96.0,
+      "queue_left": 402.28,
+      "queue_right": 498.59,
+      "queue_count_left": 88,
+      "queue_count_right": 108,
+      "disorder_index": 0.243,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.229,
+      "pressure_imbalance": -0.107,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 821.877,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 464.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 464.0,
+      "time_since_open": 104.0,
+      "queue_left": 402.44,
+      "queue_right": 485.39,
+      "queue_count_left": 87,
+      "queue_count_right": 109,
+      "disorder_index": 0.237,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.227,
+      "pressure_imbalance": -0.093,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 426.221,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 472.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 472.0,
+      "time_since_open": 112.0,
+      "queue_left": 401.69,
+      "queue_right": 497.31,
+      "queue_count_left": 88,
+      "queue_count_right": 111,
+      "disorder_index": 0.221,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.404,
+      "pressure_imbalance": -0.106,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -533.763,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 480.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 480.0,
+      "time_since_open": 120.0,
+      "queue_left": 393.0,
+      "queue_right": 499.75,
+      "queue_count_left": 85,
+      "queue_count_right": 112,
+      "disorder_index": 0.168,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.394,
+      "pressure_imbalance": -0.12,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 543.141,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 488.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 488.0,
+      "time_since_open": 128.0,
+      "queue_left": 383.09,
+      "queue_right": 497.74,
+      "queue_count_left": 86,
+      "queue_count_right": 109,
+      "disorder_index": 0.208,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.222,
+      "pressure_imbalance": -0.13,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 755.86,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 496.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 496.0,
+      "time_since_open": 136.0,
+      "queue_left": 391.93,
+      "queue_right": 488.89,
+      "queue_count_left": 86,
+      "queue_count_right": 111,
+      "disorder_index": 0.178,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.216,
+      "pressure_imbalance": -0.11,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 368.112,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 504.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 504.0,
+      "time_since_open": 144.0,
+      "queue_left": 389.06,
+      "queue_right": 484.51,
+      "queue_count_left": 88,
+      "queue_count_right": 109,
+      "disorder_index": 0.2,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.22,
+      "pressure_imbalance": -0.109,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -102.972,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 512.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 512.0,
+      "time_since_open": 152.0,
+      "queue_left": 391.65,
+      "queue_right": 492.61,
+      "queue_count_left": 89,
+      "queue_count_right": 110,
+      "disorder_index": 0.175,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.395,
+      "pressure_imbalance": -0.114,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -226.908,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 520.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 520.0,
+      "time_since_open": 160.0,
+      "queue_left": 414.76,
+      "queue_right": 484.71,
+      "queue_count_left": 93,
+      "queue_count_right": 110,
+      "disorder_index": 0.257,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.231,
+      "pressure_imbalance": -0.078,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -248.896,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 528.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 528.0,
+      "time_since_open": 168.0,
+      "queue_left": 413.23,
+      "queue_right": 486.35,
+      "queue_count_left": 92,
+      "queue_count_right": 110,
+      "disorder_index": 0.336,
+      "wrong_side_queue_share": 0.36,
+      "closure_frustration_index": 0.522,
+      "occupancy_risk": 0.308,
+      "pressure_imbalance": -0.081,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -194.625,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 536.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 536.0,
+      "time_since_open": 176.0,
+      "queue_left": 419.7,
+      "queue_right": 494.68,
+      "queue_count_left": 93,
+      "queue_count_right": 110,
+      "disorder_index": 0.332,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.246,
+      "pressure_imbalance": -0.082,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -248.896,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 544.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 544.0,
+      "time_since_open": 184.0,
+      "queue_left": 421.81,
+      "queue_right": 494.03,
+      "queue_count_left": 93,
+      "queue_count_right": 112,
+      "disorder_index": 0.323,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.245,
+      "pressure_imbalance": -0.079,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 266.808,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 552.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 552.0,
+      "time_since_open": 192.0,
+      "queue_left": 427.3,
+      "queue_right": 476.57,
+      "queue_count_left": 95,
+      "queue_count_right": 107,
+      "disorder_index": 0.331,
+      "wrong_side_queue_share": 0.257,
+      "closure_frustration_index": 0.501,
+      "occupancy_risk": 0.29,
+      "pressure_imbalance": -0.055,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 94.199,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 560.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 560.0,
+      "time_since_open": 200.0,
+      "queue_left": 426.45,
+      "queue_right": 486.06,
+      "queue_count_left": 95,
+      "queue_count_right": 110,
+      "disorder_index": 0.21,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.222,
+      "pressure_imbalance": -0.065,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -71.654,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 568.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 568.0,
+      "time_since_open": 208.0,
+      "queue_left": 453.21,
+      "queue_right": 489.11,
+      "queue_count_left": 101,
+      "queue_count_right": 109,
+      "disorder_index": 0.315,
+      "wrong_side_queue_share": 0.225,
+      "closure_frustration_index": 0.495,
+      "occupancy_risk": 0.281,
+      "pressure_imbalance": -0.038,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": 542.219,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 576.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 576.0,
+      "time_since_open": 216.0,
+      "queue_left": 463.4,
+      "queue_right": 479.26,
+      "queue_count_left": 102,
+      "queue_count_right": 108,
+      "disorder_index": 0.291,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.238,
+      "pressure_imbalance": -0.017,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 237.62,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 584.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 584.0,
+      "time_since_open": 224.0,
+      "queue_left": 452.54,
+      "queue_right": 486.11,
+      "queue_count_left": 102,
+      "queue_count_right": 108,
+      "disorder_index": 0.135,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.207,
+      "pressure_imbalance": -0.036,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": 237.62,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 592.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 592.0,
+      "time_since_open": 232.0,
+      "queue_left": 457.11,
+      "queue_right": 485.76,
+      "queue_count_left": 103,
+      "queue_count_right": 110,
+      "disorder_index": 0.182,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.216,
+      "pressure_imbalance": -0.03,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -451.596,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 600.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 600.0,
+      "time_since_open": 240.0,
+      "queue_left": 444.53,
+      "queue_right": 496.72,
+      "queue_count_left": 100,
+      "queue_count_right": 112,
+      "disorder_index": 0.131,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.206,
+      "pressure_imbalance": -0.055,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -305.355,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 608.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 608.0,
+      "time_since_open": 248.0,
+      "queue_left": 451.26,
+      "queue_right": 493.56,
+      "queue_count_left": 101,
+      "queue_count_right": 113,
+      "disorder_index": 0.144,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.209,
+      "pressure_imbalance": -0.045,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -513.541,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 616.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 616.0,
+      "time_since_open": 256.0,
+      "queue_left": 442.29,
+      "queue_right": 504.2,
+      "queue_count_left": 100,
+      "queue_count_right": 114,
+      "disorder_index": 0.201,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.22,
+      "pressure_imbalance": -0.065,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -335.984,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 624.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 624.0,
+      "time_since_open": 264.0,
+      "queue_left": 448.76,
+      "queue_right": 488.26,
+      "queue_count_left": 101,
+      "queue_count_right": 111,
+      "disorder_index": 0.332,
+      "wrong_side_queue_share": 0.3,
+      "closure_frustration_index": 0.51,
+      "occupancy_risk": 0.297,
+      "pressure_imbalance": -0.042,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -488.708,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 632.0,
+    "chosen_action": "priority_right",
+    "state_summary": {
+      "time": 632.0,
+      "time_since_open": 272.0,
+      "queue_left": 459.11,
+      "queue_right": 501.35,
+      "queue_count_left": 102,
+      "queue_count_right": 113,
+      "disorder_index": 0.256,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.231,
+      "pressure_imbalance": -0.044,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_right",
+        "score": -104.912,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 640.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 640.0,
+      "time_since_open": 280.0,
+      "queue_left": 447.62,
+      "queue_right": 505.54,
+      "queue_count_left": 102,
+      "queue_count_right": 115,
+      "disorder_index": 0.242,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.228,
+      "pressure_imbalance": -0.061,
+      "current_action": "priority_right"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -395.443,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 648.0,
+    "chosen_action": "priority_left",
+    "state_summary": {
+      "time": 648.0,
+      "time_since_open": 288.0,
+      "queue_left": 446.74,
+      "queue_right": 508.5,
+      "queue_count_left": 102,
+      "queue_count_right": 115,
+      "disorder_index": 0.197,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.399,
+      "pressure_imbalance": -0.065,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "priority_left",
+        "score": -395.443,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  },
+  {
+    "time": 656.0,
+    "chosen_action": "free_release",
+    "state_summary": {
+      "time": 656.0,
+      "time_since_open": 296.0,
+      "queue_left": 468.97,
+      "queue_right": 518.76,
+      "queue_count_left": 106,
+      "queue_count_right": 118,
+      "disorder_index": 0.261,
+      "wrong_side_queue_share": 0.0,
+      "closure_frustration_index": 0.45,
+      "occupancy_risk": 0.232,
+      "pressure_imbalance": -0.05,
+      "current_action": "priority_left"
+    },
+    "action_scores": [
+      {
+        "action": "free_release",
+        "score": -355.729,
+        "base_utility": 0,
+        "veto_reason": null
+      }
+    ]
+  }
+]

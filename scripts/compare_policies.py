@@ -19,16 +19,14 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=11)
     parser.add_argument("--outdir", default=str(ROOT / "artifacts" / "reports"))
     parser.add_argument("--model", default=None)
-    parser.add_argument("--ensemble", default=str(ROOT / "artifacts" / "models" / "surrogate_ensemble.pkl"))
-    parser.add_argument("--controller", default=str(ROOT / "artifacts" / "models" / "hybrid_controller.json"))
+
     args = parser.parse_args()
 
     results = run_policy_suite(
         args.scenario,
         seed=args.seed,
         model_path=args.model,
-        ensemble_path=args.ensemble if Path(args.ensemble).exists() else None,
-        controller_path=args.controller if Path(args.controller).exists() else None,
+
         record_history=False,
     )
     outdir = Path(args.outdir)

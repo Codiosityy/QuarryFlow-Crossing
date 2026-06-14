@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import warnings
+
 try:
     from sklearn.ensemble import GradientBoostingRegressor
     from sklearn.multioutput import MultiOutputRegressor
@@ -59,28 +61,13 @@ class SurrogateModel:
             self.backend = "numpy-ridge"
             self._fit_numpy_ridge(design.to_numpy(dtype=float), target_frame.to_numpy(dtype=float))
 
-        # Compute training residuals for uncertainty estimation
-        predictions = self.predict_rows(rows)
-        residual_matrix = np.array(
-            [[pred[col] - target_frame.iloc[i][col] for col in self.target_columns]
-             for i, pred in enumerate(predictions)],
-            dtype=float,
-        )
-        self._training_residual_std = residual_matrix.std(axis=0, ddof=1) if len(residual_matrix) > 1 else np.zeros(len(self.target_columns))
-
         self.is_fitted = True
         return self
 
     def predict_row(self, row: dict) -> dict[str, float]:
         return self.predict_rows([row])[0]
 
-    def predict_row_with_uncertainty(self, row: dict) -> tuple[dict[str, float], dict[str, float]]:
-        prediction = self.predict_row(row)
-        if self._training_residual_std is not None:
-            stds = {column: float(std) for column, std in zip(self.target_columns, self._training_residual_std)}
-        else:
-            stds = {column: 0.0 for column in self.target_columns}
-        return prediction, stds
+
 
     def predict_rows(self, rows: list[dict]) -> list[dict[str, float]]:
         if not self.is_fitted:
@@ -122,6 +109,7 @@ class SurrogateModel:
 
     @classmethod
     def load(cls, path: str | Path) -> "SurrogateModel":
+        warnings.filterwarnings("ignore", message=".*sklearn.utils.parallel.delayed.*")
         import logging
 
         source = Path(path)

@@ -100,6 +100,39 @@ class VehicleAgent:
     total_idling_co2_kg: float = 0.0
     finished: bool = False
 
+    def clone(self) -> "VehicleAgent":
+        return VehicleAgent(
+            vehicle_id=self.vehicle_id,
+            side=self.side,
+            vehicle_class=self.vehicle_class,
+            driver_profile=self.driver_profile,
+            length=self.length,
+            width=self.width,
+            desired_speed=self.desired_speed,
+            max_accel=self.max_accel,
+            min_gap=self.min_gap,
+            aggression=self.aggression,
+            lateral_flexibility=self.lateral_flexibility,
+            reaction_time_seconds=self.reaction_time_seconds,
+            gate_rush_bias=self.gate_rush_bias,
+            idling_propensity=self.idling_propensity,
+            idle_fuel_liters_per_second=self.idle_fuel_liters_per_second,
+            idle_co2_kg_per_second=self.idle_co2_kg_per_second,
+            progress=self.progress,
+            speed=self.speed,
+            lateral_offset=self.lateral_offset,
+            waiting_time=self.waiting_time,
+            spawned_at=self.spawned_at,
+            entered_crossing_at=self.entered_crossing_at,
+            exited_at=self.exited_at,
+            engine_on_when_waiting=self.engine_on_when_waiting,
+            restart_delay_remaining=self.restart_delay_remaining,
+            needs_restart_delay=self.needs_restart_delay,
+            total_idling_fuel_liters=self.total_idling_fuel_liters,
+            total_idling_co2_kg=self.total_idling_co2_kg,
+            finished=self.finished
+        )
+
 
 @dataclass
 class CrossingStateSnapshot:

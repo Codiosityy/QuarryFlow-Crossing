@@ -28,6 +28,7 @@ def _apply_dashboard_tuning(config, *, fast_mode: bool = False):
     """
     tuned = copy.deepcopy(config)
     tuned.prediction_horizon = 45.0
+    tuned.decision_interval = 8.0
     if fast_mode:
         tuned.prediction_horizon = 30.0
         tuned.time_step = 1.0
@@ -40,7 +41,7 @@ def run_policy_suite(
     seed: int = 7,
     model_path: str | None = None,
     record_history: bool = True,
-    record_every: int = 2,
+    record_every: int = 5,
     fast_mode: bool = False,
     progress_callback=None,
 ):
@@ -57,14 +58,15 @@ def run_policy_suite(
     policies = {
         "Free Flow": FreeFlowPolicy(),
         "Static Alternating": StaticAlternatingPolicy(),
+        "Legacy ML Agent": AdaptivePolicy(model=legacy_model),
     }
 
     if fast_mode:
-        # Heuristic-only adaptive for fast initial loads
+        # Heuristic-only for fast initial loads
         policies["MCTS Rollout"] = AdaptivePolicy(model=None)
     else:
         # MCTS Rollout replaces the old Machine Learning model, using it as a heuristic!
-        policies["MCTS Rollout"] = MCTSRolloutPolicy(model=legacy_model)
+        policies["MCTS Rollout"] = MCTSRolloutPolicy(model=legacy_model, rollout_duration_seconds=18.0)
 
     results = {}
     total_policies = len(policies)
@@ -148,12 +150,9 @@ def decision_trace_frame(result) -> pd.DataFrame:
                     "time": trace.time,
                     "chosen_action": trace.chosen_action,
                     "candidate_action": action_score["action"],
-                    "score": action_score["score"],
-                    "base_utility": action_score["base_utility"],
-                    "linucb_mean": action_score["linucb_mean"],
-                    "linucb_bonus": action_score["linucb_bonus"],
-                    "utility_std": action_score["utility_std"],
-                    "veto_reason": action_score["veto_reason"] or "",
+                    "score": action_score.get("score", 0),
+                    "base_utility": action_score.get("base_utility", 0),
+                    "veto_reason": action_score.get("veto_reason") or "",
                 }
             )
     return pd.DataFrame(rows)

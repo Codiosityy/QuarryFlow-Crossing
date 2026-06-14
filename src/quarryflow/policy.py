@@ -172,9 +172,7 @@ class AdaptivePolicy:
                 {
                     "action": action_name,
                     "base_utility": round(base_utility, 3),
-                    "utility_std": 0.0,
-                    "linucb_mean": 0.0,
-                    "linucb_bonus": 0.0,
+
                     "score": round(score, 3),
                     "veto_reason": None,
                 }
@@ -200,14 +198,18 @@ class AdaptivePolicy:
         # If we have an ML model, use it to instantly score all 6 actions
         # and return the top 2 for the physical MCTS simulator to evaluate.
         if self.model is not None and getattr(self.model, "is_fitted", False):
-            action_scores = []
             default_clearance = float(simulator.config.prediction_horizon)
+            rows = []
             for action in simulator.config.actions:
-                row = StateVectorBuilder.build(snapshot, action.name, simulator.config)
-                prediction = self.model.predict_row(row)
-                outcome = _prediction_to_outcome(prediction, snapshot, default_clearance)
+                rows.append(StateVectorBuilder.build(snapshot, action.name, simulator.config))
+            
+            predictions = self.model.predict_rows(rows)
+            action_scores = []
+            for i, action in enumerate(simulator.config.actions):
+                outcome = _prediction_to_outcome(predictions[i], snapshot, default_clearance)
                 score = self.config.reward(outcome)
                 action_scores.append((score, action.name))
+                
             action_scores.sort(key=lambda x: x[0], reverse=True)
             return {action_scores[0][1], action_scores[1][1]}
 
