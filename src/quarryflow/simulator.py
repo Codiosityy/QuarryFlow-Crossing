@@ -76,7 +76,6 @@ class RailwayCrossingSimulator:
         self._clearance_started_at: float | None = None
         self._entry_freeze_until = 0.0
         self._conflict_release_side: str | None = None
-        self._recorded_initial_state = False
 
     def clone(self) -> "RailwayCrossingSimulator":
         return copy.deepcopy(self)
@@ -278,13 +277,14 @@ class RailwayCrossingSimulator:
         both_sides_pressing = int(
             self._leader_ready(LEFT) is not None and self._leader_ready(RIGHT) is not None
         )
+        conflict_component = min(1.0, self.conflict_count / 8.0)
         occupancy_risk = min(
             1.0,
             0.18 * crossing_occupancy
             + 0.35 * both_sides_pressing
             + 0.20 * disorder_index
             + 0.17 * wrong_side_share
-            + 0.02 * self.conflict_count,
+            + 0.10 * conflict_component,
         )
         total_pressure = queue_lengths[LEFT] + queue_lengths[RIGHT]
         pressure_imbalance = (
@@ -580,7 +580,7 @@ class RailwayCrossingSimulator:
                     1.0,
                 )
                 rush_gain = 1.0 + vehicle.gate_rush_bias * (0.18 + 0.34 * urgency)
-                proposed_speed = min(vehicle.desired_speed * rush_gain, proposed_speed * rush_gain)
+                proposed_speed = min(vehicle.desired_speed, proposed_speed * rush_gain)
             if (
                 self.current_action.mode == "free"
                 and near_gate
@@ -695,7 +695,8 @@ class RailwayCrossingSimulator:
         if not self.vehicles[side]:
             return None
         leader = max(self.vehicles[side], key=lambda item: item.progress)
-        if self.config.approach_length - 4.0 <= leader.progress < self.config.approach_length:
+        # Use 4.4m threshold to account for full car length (4.0m was too small)
+        if self.config.approach_length - 4.4 <= leader.progress < self.config.approach_length:
             return leader
         return None
 

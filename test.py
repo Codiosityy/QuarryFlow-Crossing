@@ -8,7 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[0]
 sys.path.insert(0, str(ROOT / "src"))
 
 from quarryflow.dashboard_data import (  # noqa: E402
