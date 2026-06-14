@@ -38,6 +38,7 @@ class SurrogateModel:
         self.is_fitted = False
         self._model = None
         self._coefficients: np.ndarray | None = None
+        self._training_residual_std: np.ndarray | None = None
 
     def fit(self, rows: list[dict], targets: list[dict]) -> "SurrogateModel":
         features = pd.DataFrame(rows)
@@ -58,6 +59,15 @@ class SurrogateModel:
             self.backend = "numpy-ridge"
             self._fit_numpy_ridge(design.to_numpy(dtype=float), target_frame.to_numpy(dtype=float))
 
+        # Compute training residuals for uncertainty estimation
+        predictions = self.predict_rows(rows)
+        residual_matrix = np.array(
+            [[pred[col] - target_frame.iloc[i][col] for col in self.target_columns]
+             for i, pred in enumerate(predictions)],
+            dtype=float,
+        )
+        self._training_residual_std = residual_matrix.std(axis=0, ddof=1) if len(residual_matrix) > 1 else np.zeros(len(self.target_columns))
+
         self.is_fitted = True
         return self
 
@@ -66,7 +76,11 @@ class SurrogateModel:
 
     def predict_row_with_uncertainty(self, row: dict) -> tuple[dict[str, float], dict[str, float]]:
         prediction = self.predict_row(row)
-        return prediction, {column: 0.0 for column in self.target_columns}
+        if self._training_residual_std is not None:
+            stds = {column: float(std) for column, std in zip(self.target_columns, self._training_residual_std)}
+        else:
+            stds = {column: 0.0 for column in self.target_columns}
+        return prediction, stds
 
     def predict_rows(self, rows: list[dict]) -> list[dict[str, float]]:
         if not self.is_fitted:
@@ -101,6 +115,7 @@ class SurrogateModel:
             "target_columns": self.target_columns,
             "model": self._model,
             "coefficients": self._coefficients,
+            "training_residual_std": self._training_residual_std,
         }
         with target.open("wb") as handle:
             pickle.dump(payload, handle)
@@ -109,7 +124,7 @@ class SurrogateModel:
     def load(cls, path: str | Path) -> "SurrogateModel":
         source = Path(path)
         with source.open("rb") as handle:
-            payload = pickle.load(handle)
+            payload = pickle.load(handle)  # noqa: S301
 
         instance = cls()
         instance.backend = payload["backend"]
@@ -117,6 +132,7 @@ class SurrogateModel:
         instance.target_columns = payload["target_columns"]
         instance._model = payload["model"]
         instance._coefficients = payload["coefficients"]
+        instance._training_residual_std = payload.get("training_residual_std")
         instance.is_fitted = True
         return instance
 
@@ -226,7 +242,7 @@ class BootstrapSurrogateEnsemble:
     def load(cls, path: str | Path) -> "BootstrapSurrogateEnsemble":
         source = Path(path)
         with source.open("rb") as handle:
-            payload = pickle.load(handle)
+            payload = pickle.load(handle)  # noqa: S301
         instance = cls(n_models=int(payload["n_models"]), random_seed=int(payload["random_seed"]))
         instance.target_columns = list(payload["target_columns"])
         instance.backend = str(payload.get("backend", "bootstrap-ensemble"))

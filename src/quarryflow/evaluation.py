@@ -28,6 +28,13 @@ CURRICULUM_STAGES: list[tuple[str, list[str]]] = [
 
 
 def collect_counterfactual_rows(scenario_name: str, seed: int) -> list[dict]:
+    """Collect counterfactual training rows for surrogate model fitting.
+
+    NOTE: For each snapshot, all actions are evaluated with the same state
+    features (only the action column differs). This creates correlated
+    training rows. The model handles this via the action one-hot encoding,
+    but be aware that effective sample size is smaller than the row count.
+    """
     config = build_scenario(scenario_name, seed=seed)
     simulator = RailwayCrossingSimulator(config, seed=seed)
     rows: list[dict] = []

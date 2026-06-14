@@ -96,11 +96,21 @@ class StateVectorBuilder:
         scenario_column = f"scenario_{config.name}"
         if scenario_column in vector:
             vector[scenario_column] = 1.0
+        else:
+            raise ValueError(
+                f"Unknown scenario name '{config.name}'. "
+                f"Expected one of: {[c.replace('scenario_', '') for c in SCENARIO_COLUMNS]}"
+            )
         for column in ACTION_COLUMNS:
             vector[column] = 0.0
         action_column = f"action_{action_name}"
         if action_column in vector:
             vector[action_column] = 1.0
+        else:
+            raise ValueError(
+                f"Unknown action name '{action_name}'. "
+                f"Expected one of: {[c.replace('action_', '') for c in ACTION_COLUMNS]}"
+            )
         return vector
 
     @staticmethod

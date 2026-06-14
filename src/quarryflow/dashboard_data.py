@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 import pandas as pd
@@ -14,7 +15,7 @@ from .simulator import RailwayCrossingSimulator
 
 
 def _apply_dashboard_tuning(config, *, fast_mode: bool = False):
-    """Patch scenario config for faster dashboard runs.
+    """Return a tuned copy of scenario config for faster dashboard runs.
 
     Reduces prediction_horizon (90 → 45 s).  This halves the number
     of steps in each counterfactual rollout while still capturing the
@@ -24,11 +25,12 @@ def _apply_dashboard_tuning(config, *, fast_mode: bool = False):
     When fast_mode is True, also increases time_step to 1.0 for a
     ~2x speedup on initial loads.
     """
-    config.prediction_horizon = 45.0
+    tuned = copy.deepcopy(config)
+    tuned.prediction_horizon = 45.0
     if fast_mode:
-        config.prediction_horizon = 30.0
-        config.time_step = 1.0
-    return config
+        tuned.prediction_horizon = 30.0
+        tuned.time_step = 1.0
+    return tuned
 
 
 def run_policy_suite(
