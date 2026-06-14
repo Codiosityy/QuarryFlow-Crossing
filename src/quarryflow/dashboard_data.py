@@ -12,6 +12,7 @@ from .policy import AdaptivePolicy, FreeFlowPolicy, HybridAdaptivePolicy, Static
 from .reporting import summarize_results
 from .scenarios import build_scenario
 from .simulator import RailwayCrossingSimulator
+from .mcts import MCTSRolloutPolicy
 
 
 def _apply_dashboard_tuning(config, *, fast_mode: bool = False):
@@ -76,6 +77,7 @@ def run_policy_suite(
         policies["Legacy Adaptive"] = AdaptivePolicy(model=None)
     else:
         policies["Legacy Adaptive"] = AdaptivePolicy(model=legacy_model or ensemble)
+        policies["MCTS Rollout"] = MCTSRolloutPolicy()
 
     if not fast_mode and ensemble is not None and bandit is not None and controller_config is not None:
         policies["Hybrid Adaptive"] = HybridAdaptivePolicy(
