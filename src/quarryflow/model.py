@@ -122,9 +122,22 @@ class SurrogateModel:
 
     @classmethod
     def load(cls, path: str | Path) -> "SurrogateModel":
+        import logging
+
         source = Path(path)
-        with source.open("rb") as handle:
-            payload = pickle.load(handle)  # noqa: S301
+        try:
+            with source.open("rb") as handle:
+                payload = pickle.load(handle)  # noqa: S301
+        except (ModuleNotFoundError, ImportError) as exc:
+            logging.warning(
+                "Could not load surrogate model from %s (%s). "
+                "Falling back to heuristic-only mode.",
+                path,
+                exc,
+            )
+            instance = cls()
+            instance.is_fitted = False
+            return instance
 
         instance = cls()
         instance.backend = payload["backend"]
@@ -240,9 +253,22 @@ class BootstrapSurrogateEnsemble:
 
     @classmethod
     def load(cls, path: str | Path) -> "BootstrapSurrogateEnsemble":
+        import logging
+
         source = Path(path)
-        with source.open("rb") as handle:
-            payload = pickle.load(handle)  # noqa: S301
+        try:
+            with source.open("rb") as handle:
+                payload = pickle.load(handle)  # noqa: S301
+        except (ModuleNotFoundError, ImportError) as exc:
+            logging.warning(
+                "Could not load ensemble from %s (%s). "
+                "Falling back to heuristic-only mode.",
+                path,
+                exc,
+            )
+            instance = cls()
+            instance.is_fitted = False
+            return instance
         instance = cls(n_models=int(payload["n_models"]), random_seed=int(payload["random_seed"]))
         instance.target_columns = list(payload["target_columns"])
         instance.backend = str(payload.get("backend", "bootstrap-ensemble"))
