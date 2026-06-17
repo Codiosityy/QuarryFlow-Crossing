@@ -438,8 +438,6 @@ with tabs[2]:
     if rh.empty:
         st.info("Click **Run Full ML Simulation** in the sidebar to load replay data.")
     else:
-        import streamlit.components.v1 as components
-        
         # We need to import export_for_visualization from NewFrontend.export_viz
         import sys
         new_frontend_path = str(ROOT / "NewFrontend")
@@ -494,7 +492,7 @@ with tabs[2]:
         """
         
         final_html = html_str + init_script
-        components.html(final_html, height=700, scrolling=False)
+        st.iframe(final_html, height=700)
 
         # Still show action mix and decision log below the visualizer
         st.markdown("---")

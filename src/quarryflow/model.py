@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 import warnings
+warnings.filterwarnings("ignore", message=".*sklearn.utils.parallel.delayed.*")
 
 try:
     from sklearn.ensemble import GradientBoostingRegressor
