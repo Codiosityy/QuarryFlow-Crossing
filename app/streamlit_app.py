@@ -438,25 +438,66 @@ with tabs[2]:
     if rh.empty:
         st.info("Click **Run Full ML Simulation** in the sidebar to load replay data.")
     else:
-        rc, mc = st.columns([1.4, 0.9])
-        with rc:
-            si = st.slider("Frame", 0, len(rh) - 1, min(70, len(rh) - 1))
-            vf = vehicle_frame(rr, si)
-            ft = float(rh.iloc[si]["time"])
-            if not vf.empty:
-                st.plotly_chart(build_snapshot_figure(vf, scenario, seed, ft), width='stretch')
-        with mc:
-            snap = rr.snapshots[si]
-            st.markdown(metric_card("Barrier", "🔴 Closed" if snap.barrier_closed else "🟢 Open",
-                                    f"action: {snap.current_action}", ""), unsafe_allow_html=True)
-            st.markdown(metric_card("Queue Pressure",
-                                    f"{snap.queue_counts['left']} ← | → {snap.queue_counts['right']}",
-                                    "left | right vehicles",
-                                    f"{snap.queue_lengths['left']:.0f}m | {snap.queue_lengths['right']:.0f}m"), unsafe_allow_html=True)
-            st.markdown(metric_card("Risk", num(snap.occupancy_risk),
-                                    f"disorder: {num(snap.disorder_index)}",
-                                    f"occupancy: {snap.crossing_occupancy} · conflicts: {snap.conflict_count}"), unsafe_allow_html=True)
+        import streamlit.components.v1 as components
+        
+        # We need to import export_for_visualization from NewFrontend.export_viz
+        import sys
+        new_frontend_path = str(ROOT / "NewFrontend")
+        if new_frontend_path not in sys.path:
+            sys.path.insert(0, new_frontend_path)
+        from export_viz import export_for_visualization
 
+        # Read the new frontend HTML
+        html_path = ROOT / "NewFrontend" / "index.html"
+        html_str = html_path.read_text(encoding='utf-8')
+
+        js_inject = []
+        for policy_label, result in results.items():
+            data = export_for_visualization(
+                result,
+                scenario_name=scenario,
+                policy_label=policy_label,
+                episode_seconds=config.episode_seconds,
+                time_step=config.time_step
+            )
+            data["train_closures"] = [[s, e] for s, e in config.train_closures]
+            json_str = json.dumps(data)
+            js_inject.append(f"""
+            (() => {{
+                const data = {json_str};
+                if (!state.fileData) state.fileData = {{}};
+                if (!state.scenarios['{scenario}']) state.scenarios['{scenario}'] = [];
+                if (!state.scenarios['{scenario}'].includes('{policy_label}')) {{
+                    state.scenarios['{scenario}'].push('{policy_label}');
+                }}
+                state.fileData[`{scenario}\\t{policy_label}`] = data;
+            }})();
+            """)
+
+        # Add the script to inject data and initialize
+        init_script = f"""
+        <script>
+        {chr(10).join(js_inject)}
+        
+        populateScenarioSelect();
+        scenarioSelect.value = '{scenario}';
+        populatePolicySelect(state.scenarios['{scenario}']);
+        policySelect.value = '{chart_pol}';
+        
+        state.data = state.fileData[`{scenario}\\t{chart_pol}`];
+        state.frameIndex = 0;
+        if (!canvases.length) createCanvasPanels(1);
+        render();
+        updateScrubber();
+        emptyState.style.display = 'none';
+        </script>
+        """
+        
+        final_html = html_str + init_script
+        components.html(final_html, height=700, scrolling=False)
+
+        # Still show action mix and decision log below the visualizer
+        st.markdown("---")
         sc, lc = st.columns([0.8, 1.2])
         with sc:
             asum = action_summary_frame(rr)
@@ -470,30 +511,6 @@ with tabs[2]:
                 st.caption("No log for this policy.")
             else:
                 st.dataframe(ah, width='stretch', height=320)
-
-        if not th.empty:
-            ts = th[th["time"] <= ft]
-            if ts.empty: ts = th.iloc[[0]]
-            tt = float(ts["time"].max())
-            at = th[th["time"] == tt].copy()
-            chosen = at[at["candidate_action"] == at["chosen_action"]]
-            alt = at[at["candidate_action"] != at["chosen_action"]]
-            rl, rr2 = st.columns([0.9, 1.1])
-            with rl:
-                st.subheader("Decision Rationale")
-                if not chosen.empty:
-                    cr = chosen.iloc[0]
-                    st.markdown(metric_card("✅ Chosen", str(cr["chosen_action"]),
-                                            f"score: {num(float(cr['score']))}",
-                                            f"utility: {num(float(cr.get('base_utility', 0)))}"),
-                                unsafe_allow_html=True)
-                if not alt.empty:
-                    ar = alt.sort_values("score", ascending=False).iloc[0]
-                    st.markdown(metric_card("❌ Alternative", str(ar["candidate_action"]),
-                                            f"score: {num(float(ar['score']))}",
-                                            f"veto: {ar['veto_reason'] or 'none'}"), unsafe_allow_html=True)
-            with rr2:
-                st.dataframe(at, width='stretch', height=240, hide_index=True)
 
 # ── Tab 3: Sensitivity ────────────────────────────────────────
 with tabs[3]:
